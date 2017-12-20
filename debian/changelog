@@ -1,3 +1,10 @@
+tortoisehg (4.4.1-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * New upstream version 4.4.1
+
+ -- Philippe Pepiot <philippe.pepiot@logilab.fr>  Wed, 20 Dec 2017 14:16:51 +0100
+
 tortoisehg (4.3.1-1) unstable; urgency=medium
 
   * Imported Upstream version 4.3.1 (Closes: #873583).

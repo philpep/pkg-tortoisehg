@@ -8,19 +8,50 @@
 Main Qt4 application for TortoiseHg
 """
 
+from __future__ import absolute_import
+
 import os
 import subprocess
 import sys
-from tortoisehg.util import paths, hglib
-from tortoisehg.util.i18n import _
 
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib, mq, repotab, serve
-from tortoisehg.hgqt.reporegistry import RepoRegistryView
-from tortoisehg.hgqt.docklog import LogDockWidget
-from tortoisehg.hgqt.settings import SettingsDialog
+from .qtcore import (
+    QSettings,
+    QT_VERSION,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QActionGroup,
+    QApplication,
+    QComboBox,
+    QFileDialog,
+    QKeySequence,
+    QMainWindow,
+    QMenu,
+    QMenuBar,
+    QShortcut,
+    QSizePolicy,
+    QToolBar,
+    qApp,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import (
+    hglib,
+    paths,
+)
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    mq,
+    qtlib,
+    repotab,
+    serve,
+)
+from .docklog import LogDockWidget
+from .reporegistry import RepoRegistryView
+from .settings import SettingsDialog
 
 class Workbench(QMainWindow):
     """hg repository viewer/browser application"""
@@ -78,9 +109,18 @@ class Workbench(QMainWindow):
                                     self.cloneRepository)
             self.dockMenu.addAction(_('&Open Repository...'),
                                     self.openRepository)
-            qt_mac_set_dock_menu(self.dockMenu)
-            # On Mac OS X, we do not want icons on menus
-            qt_mac_set_menubar_icons(False)
+            if QT_VERSION < 0x50000:
+                from .qtgui import (
+                    qt_mac_set_dock_menu,
+                    qt_mac_set_menubar_icons,
+                )
+                qt_mac_set_dock_menu(self.dockMenu)
+                # On Mac OS X, we do not want icons on menus
+                qt_mac_set_menubar_icons(False)
+            else:
+                self.dockMenu.setAsDockMenu()
+                qapp = QApplication.instance()
+                qapp.setAttribute(Qt.AA_DontShowIconsInMenus, True)
 
         self._dialogs = qtlib.DialogKeeper(
             lambda self, dlgmeth: dlgmeth(self), parent=self)
@@ -463,7 +503,7 @@ class Workbench(QMainWindow):
         if urlindex < 0:
             return
         opindex = {'incoming': 0, 'pull': 0, 'outgoing': 1, 'push': 1}[op]
-        return self.urlCombo.itemData(urlindex).toPyObject()[opindex]
+        return self.urlCombo.itemData(urlindex)[opindex]
 
     @pyqtSlot(int)
     def _updateSyncUrl(self, index):
@@ -484,7 +524,7 @@ class Workbench(QMainWindow):
             tooltip = _('There are no configured sync paths.\n'
                         'Open the Synchronize tab to configure them.')
         else:
-            tooltip = self.urlCombo.itemData(index, Qt.ToolTipRole).toString()
+            tooltip = self.urlCombo.itemData(index, Qt.ToolTipRole)
         self.urlCombo.setToolTip(tooltip)
 
     def _updateSyncActionToolTip(self, index):
@@ -496,7 +536,7 @@ class Workbench(QMainWindow):
                 'push':     _('Push outgoing changes'),
                 }
         else:
-            pullurl, pushurl = self.urlCombo.itemData(index).toPyObject()
+            pullurl, pushurl = self.urlCombo.itemData(index)
             tooltips = {
                 'incoming': _('Check for incoming changes from\n%s') % pullurl,
                 'pull':     _('Pull incoming changes from\n%s') % pullurl,
@@ -505,7 +545,7 @@ class Workbench(QMainWindow):
                 }
 
         for a in self.synctbar.actions():
-            op = str(a.data().toString())
+            op = str(a.data())
             if op in tooltips:
                 a.setToolTip(tooltips[op])
 
@@ -613,7 +653,7 @@ class Workbench(QMainWindow):
     def _onSwitchRepoTaskTab(self, action):
         rw = self._currentRepoWidget()
         if rw:
-            rw.switchToNamedTaskTab(str(action.data().toString()))
+            rw.switchToNamedTaskTab(str(action.data()))
 
     @pyqtSlot(bool)
     def _setRepoTaskTabVisible(self, visible):
@@ -757,7 +797,7 @@ class Workbench(QMainWindow):
                 self.actionSelectTaskPbranch.setVisible('pbranch' in exts)
             name = repoWidget.currentTaskTabName()
             for action in self.actionGroupTaskView.actions():
-                action.setChecked(str(action.data().toString()) == name)
+                action.setChecked(str(action.data()) == name)
             self.lockToolAction.setVisible('simplelock' in exts)
         self._updateShowConsoleAction()
 
@@ -841,7 +881,7 @@ class Workbench(QMainWindow):
     def _runSyncAction(self, action):
         w = self._currentRepoWidget()
         if w:
-            op = str(action.data().toString())
+            op = str(action.data())
             w.setSyncUrl(self._syncUrlFor(op) or '')
             getattr(w, op)()
 
@@ -1070,33 +1110,33 @@ class Workbench(QMainWindow):
     def restoreSettings(self):
         s = QSettings()
         wb = "Workbench/"
-        self.restoreGeometry(s.value(wb + 'geometry').toByteArray())
-        self.restoreState(s.value(wb + 'windowState').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, wb + 'geometry'))
+        self.restoreState(qtlib.readByteArray(s, wb + 'windowState'))
         self._actionDockedConsole.setChecked(
-            s.value(wb + 'dockedConsole', True).toBool())
+            qtlib.readBool(s, wb + 'dockedConsole', True))
 
         lastreposyncpaths = {}
         npaths = s.beginReadArray('lastreposyncpaths')
         for n in range(npaths):
             s.setArrayIndex(n)
-            root = unicode(s.value('root').toString())
-            lastreposyncpaths[root] = s.value('path').toString()
+            root = qtlib.readString(s, 'root')
+            lastreposyncpaths[root] = qtlib.readString(s, 'path')
         s.endArray()
         self._lastRepoSyncPath = lastreposyncpaths
 
-        save = s.value(wb + 'saveRepos').toBool()
+        save = qtlib.readBool(s, wb + 'saveRepos')
         self.actionSaveRepos.setChecked(save)
-        savelastsyncpaths = s.value(wb + 'saveLastSyncPaths').toBool()
+        savelastsyncpaths = qtlib.readBool(s, wb + 'saveLastSyncPaths')
         self.actionSaveLastSyncPaths.setChecked(savelastsyncpaths)
 
-        openreposvalue = unicode(s.value(wb + 'openrepos').toString())
+        openreposvalue = qtlib.readString(s, wb + 'openrepos')
         if openreposvalue:
             openrepos = openreposvalue.split(',')
         else:
             openrepos = []
         # Note that if a "root" has been passed to the "thg" command,
         # "lastactiverepo" will have no effect
-        lastactiverepo = unicode(s.value(wb + 'lastactiverepo').toString())
+        lastactiverepo = qtlib.readString(s, wb + 'lastactiverepo')
         self.repoTabsWidget.restoreRepos(openrepos, lastactiverepo)
 
         # Clear the lastactiverepo and the openrepos list once the workbench state

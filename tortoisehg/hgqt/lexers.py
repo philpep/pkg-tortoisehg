@@ -5,11 +5,17 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 import re
 
-from PyQt4 import Qsci, QtGui
-from tortoisehg.hgqt import qtlib
+from . import (
+    qsci as Qsci,
+    qtgui as QtGui,
+)
+
+from . import qtlib
 
 if hasattr(QtGui.QColor, 'getHslF'):
     def _fixdarkcolors(lexer):

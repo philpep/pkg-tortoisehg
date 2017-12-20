@@ -5,13 +5,42 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from tortoisehg.util import hglib, i18n
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, csinfo, cmdcore, cmdui, status, resolve
-from tortoisehg.hgqt import qscilib, thgrepo, messageentry, wctxcleaner
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QSettings,
+    QSize,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QVBoxLayout,
+    QWizard,
+    QWizardPage,
+)
+
+from ..util import (
+    hglib,
+    i18n,
+)
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    csinfo,
+    qscilib,
+    qtlib,
+    messageentry,
+    resolve,
+    status,
+    thgrepo,
+    wctxcleaner,
+)
 
 def checkrev(repo, rev):
     op1, op2 = repo.dirstate.parents()
@@ -62,7 +91,7 @@ class BackoutDialog(QWizard):
         repo = self._repoagent.rawRepo()
         n = 'autoresolve'
         self.setField(n, repo.ui.configbool('tortoisehg', n,
-                                            qs.value(n, True).toBool()))
+                                            qtlib.readBool(qs, n, True)))
         qs.endGroup()
 
     def _writeSettings(self):
@@ -273,7 +302,7 @@ class BackoutPage(BasePage):
         if self._parentbackout:
             self.wizard().next()
             return
-        tool = self.field('autoresolve').toBool() and ':merge' or ':fail'
+        tool = self.field('autoresolve') and ':merge' or ':fail'
         cmdline = hglib.buildcmdargs('backout', self._backoutrev, tool=tool,
                                      no_commit=True)
         self._cmdlog.clearLog()
@@ -308,7 +337,7 @@ class BackoutPage(BasePage):
     def onCommandFinished(self, ret):
         if ret in (0, 1):
             self.backoutcomplete = True
-            if self.field('autoadvance').toBool():
+            if self.field('autoadvance'):
                 self.tryAutoAdvance(True)
             self.completeChanged.emit()
 
@@ -317,7 +346,7 @@ class BackoutPage(BasePage):
         if cmd == 'resolve':
             dlg = resolve.ResolveDialog(self._repoagent, self)
             dlg.exec_()
-            if self.field('autoadvance').toBool():
+            if self.field('autoadvance'):
                 self.tryAutoAdvance(True)
             self.completeChanged.emit()
 
@@ -471,7 +500,7 @@ class CommitPage(BasePage):
     def validatePage(self):
         if self.commitComplete:
             # commit succeeded, repositoryChanged() called wizard().next()
-            if self.field('skiplast').toBool():
+            if self.field('skiplast'):
                 self.wizard().close()
             return True
         if not self._cmdsession.isFinished():

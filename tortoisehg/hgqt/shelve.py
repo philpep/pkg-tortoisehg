@@ -5,18 +5,43 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 import time
 
-from mercurial import commands, error, util
+from .qtcore import (
+    QSettings,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QComboBox,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QKeySequence,
+    QPushButton,
+    QSplitter,
+    QToolBar,
+    QVBoxLayout,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.patchctx import patchctx
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, cmdui, chunks
+from mercurial import (
+    commands,
+    error,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from ..util.patchctx import patchctx
+from . import (
+    cmdui,
+    chunks,
+    qtlib,
+)
 
 class ShelveDialog(QDialog):
 
@@ -52,12 +77,10 @@ class ShelveDialog(QDialog):
         aframe = QFrame(self.splitter)
         avbox = QVBoxLayout()
         avbox.setSpacing(2)
-        avbox.setMargin(2)
         avbox.setContentsMargins(2, 2, 2, 2)
         aframe.setLayout(avbox)
         ahbox = QHBoxLayout()
         ahbox.setSpacing(2)
-        ahbox.setMargin(2)
         ahbox.setContentsMargins(2, 2, 2, 2)
         avbox.addLayout(ahbox)
         self.comboa = QComboBox(self)
@@ -82,12 +105,10 @@ class ShelveDialog(QDialog):
         bframe = QFrame(self.splitter)
         bvbox = QVBoxLayout()
         bvbox.setSpacing(2)
-        bvbox.setMargin(2)
         bvbox.setContentsMargins(2, 2, 2, 2)
         bframe.setLayout(bvbox)
         bhbox = QHBoxLayout()
         bhbox.setSpacing(2)
-        bhbox.setMargin(2)
         bhbox.setContentsMargins(2, 2, 2, 2)
         bvbox.addLayout(bhbox)
         self.combob = QComboBox(self)
@@ -519,12 +540,12 @@ class ShelveDialog(QDialog):
     def restoreSettings(self):
         s = QSettings()
         wb = "shelve/"
-        self.restoreGeometry(s.value(wb + 'geometry').toByteArray())
-        self.splitter.restoreState(s.value(wb + 'panesplitter').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, wb + 'geometry'))
+        self.splitter.restoreState(qtlib.readByteArray(s, wb + 'panesplitter'))
         self.browsea.splitter.restoreState(
-                          s.value(wb + 'filesplitter').toByteArray())
+            qtlib.readByteArray(s, wb + 'filesplitter'))
         self.browseb.splitter.restoreState(
-                          s.value(wb + 'filesplitter').toByteArray())
+            qtlib.readByteArray(s, wb + 'filesplitter'))
         self.browsea.loadSettings(s, wb + 'fileviewa')
         self.browseb.loadSettings(s, wb + 'fileviewb')
 

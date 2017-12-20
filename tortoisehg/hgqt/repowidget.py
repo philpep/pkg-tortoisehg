@@ -6,35 +6,99 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import binascii
-import os
-import shlex, subprocess  # used by runCustomCommand
 import cStringIO
-from mercurial import error, patch, phases, util
+import os
+import shlex  # used by runCustomCommand
+import subprocess  # used by runCustomCommand
 
-from tortoisehg.util import hglib, shlib, paths
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import infobar, qtlib, repomodel
-from tortoisehg.hgqt.qtlib import QuestionMsgBox, InfoMsgBox, WarningMsgBox
-from tortoisehg.hgqt.qtlib import DemandWidget
-from tortoisehg.hgqt import cmdcore, cmdui, update, tag, backout, merge, visdiff
-from tortoisehg.hgqt import archive, thgimport, thgstrip, purge, bookmark
-from tortoisehg.hgqt import bisect, rebase, resolve, compress, mq
-from tortoisehg.hgqt import prune, settings, shelve
-from tortoisehg.hgqt import matching, graft, hgemail, postreview, revdetails
-from tortoisehg.hgqt import sign
+from .qtcore import (
+    QFile,
+    QIODevice,
+    QItemSelectionModel,
+    QMimeData,
+    QSettings,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QApplication,
+    QDesktopServices,
+    QFileDialog,
+    QIcon,
+    QKeySequence,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QSplitter,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.hgqt.repofilter import RepoFilterBar
-from tortoisehg.hgqt.repoview import HgRepoView
-from tortoisehg.hgqt.commit import CommitWidget
-from tortoisehg.hgqt.sync import SyncWidget
-from tortoisehg.hgqt.grep import SearchWidget
-from tortoisehg.hgqt.pbranch import PatchBranchWidget
-from tortoisehg.hgqt.docklog import ConsoleWidget
+from mercurial import (
+    error,
+    patch,
+    phases,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
+from ..util import (
+    hglib,
+    paths,
+    shlib,
+)
+from ..util.i18n import _
+from . import (
+    archive,
+    backout,
+    bisect,
+    bookmark,
+    cmdcore,
+    cmdui,
+    compress,
+    graft,
+    hgemail,
+    infobar,
+    matching,
+    merge,
+    mq,
+    postreview,
+    prune,
+    purge,
+    qtlib,
+    rebase,
+    repomodel,
+    resolve,
+    revdetails,
+    settings,
+    shelve,
+    sign,
+    tag,
+    thgimport,
+    thgstrip,
+    update,
+    visdiff,
+)
+from .commit import CommitWidget
+from .docklog import ConsoleWidget
+from .grep import SearchWidget
+from .pbranch import PatchBranchWidget
+from .qtlib import (
+    DemandWidget,
+    InfoMsgBox,
+    QuestionMsgBox,
+    WarningMsgBox,
+)
+from .repofilter import RepoFilterBar
+from .repoview import HgRepoView
+from .sync import SyncWidget
 
 # iswd = working directory
 # isrev = the changeset has an integer revision number
@@ -129,7 +193,7 @@ class RepoWidget(QWidget):
 
         self.layout().addWidget(self.repotabs_splitter)
 
-        cs = ('workbench', _('Workbench Log Columns'))
+        cs = ('Workbench', _('Workbench Log Columns'))
         self.repoview = view = HgRepoView(self._repoagent, 'repoWidget', cs,
                                           self)
         view.clicked.connect(self._clearInfoMessage)
@@ -324,7 +388,7 @@ class RepoWidget(QWidget):
         pats, opts = {}, {}
         cw = CommitWidget(self._repoagent, pats, opts, self, rev=self.rev)
         cw.buttonHBox.addWidget(cw.commitSetupButton())
-        cw.loadSettings(QSettings(), 'workbench')
+        cw.loadSettings(QSettings(), 'Workbench')
 
         cw.progress.connect(self.progress)
         cw.linkActivated.connect(self._openLink)
@@ -579,7 +643,7 @@ class RepoWidget(QWidget):
         sess.setCaptureOutput(True)
         sess.commandFinished.connect(self._onGotoRevQueryFinished)
 
-    @qtlib.senderSafeSlot(int)
+    @pyqtSlot(int)
     def _onGotoRevQueryFinished(self, ret):
         sess = self.sender()
         if ret != 0:
@@ -937,7 +1001,7 @@ class RepoWidget(QWidget):
         self.filterbar.loadSettings(s)
         self._repoagent.setHiddenRevsIncluded(self.filterbar.getShowHidden())
         self.repotabs_splitter.restoreState(
-            s.value('repowidget/splitter-'+repoid).toByteArray())
+            qtlib.readByteArray(s, 'repoWidget/splitter-' + repoid))
 
     def okToContinue(self):
         if self._repoagent.isBusy():
@@ -966,7 +1030,7 @@ class RepoWidget(QWidget):
         if self.isVisible():
             try:
                 repoid = hglib.shortrepoid(self.repo)
-                s.setValue('repowidget/splitter-'+repoid,
+                s.setValue('repoWidget/splitter-' + repoid,
                            self.repotabs_splitter.saveState())
             except EnvironmentError:
                 pass
@@ -1293,8 +1357,9 @@ class RepoWidget(QWidget):
             filename = '%s_%d_to_%d.diff' % (os.path.basename(root),
                                              self.menuselection[0],
                                              self.menuselection[1])
-            file = QFileDialog.getSaveFileName(self, _('Write diff file'),
-                               hglib.tounicode(os.path.join(root, filename)))
+            file, _filter = QFileDialog.getSaveFileName(
+                self, _('Write diff file'),
+                hglib.tounicode(os.path.join(root, filename)))
             if not file:
                 return
             f = QFile(file)
@@ -1510,9 +1575,9 @@ class RepoWidget(QWidget):
             else:
                 defaultpath = self.repoRootPath()
 
-            ret = QFileDialog.getSaveFileName(self, _('Export patch'),
-                                              defaultpath,
-                                              _('Patch Files (*.patch)'))
+            ret, _filter = QFileDialog.getSaveFileName(
+                self, _('Export patch'), defaultpath,
+                _('Patch Files (*.patch)'))
             if not ret:
                 return
             epath = unicode(ret)
@@ -1631,7 +1696,7 @@ class RepoWidget(QWidget):
 
     @pyqtSlot()
     def lockTool(self):
-        from locktool import LockDialog
+        from .locktool import LockDialog
         dlg = LockDialog(self._repoagent, self)
         if dlg:
             dlg.exec_()
@@ -1668,7 +1733,7 @@ class RepoWidget(QWidget):
     @pyqtSlot(QAction)
     def _filterBySelectedRevisions(self, action):
         revs = hglib.compactrevs(sorted(self.repoview.selectedRevisions()))
-        expr = str(action.data().toString())
+        expr = str(action.data())
         if not expr:
             self._filterByMatchDialog(revs)
             return
@@ -1709,7 +1774,7 @@ class RepoWidget(QWidget):
         sess.setCaptureOutput(True)
         sess.commandFinished.connect(self._onMergePreviewFinished)
 
-    @qtlib.senderSafeSlot(int)
+    @pyqtSlot(int)
     def _onMergePreviewFinished(self, ret):
         sess = self.sender()
         if ret == 255 and 'hg heads' in sess.errorString():
@@ -1832,8 +1897,8 @@ class RepoWidget(QWidget):
             data.update(rev=tip)
             filename = '%(name)s_%(base)s_to_%(rev)s.hg' % data
 
-        file = QFileDialog.getSaveFileName(self, _('Write bundle'),
-                                           os.path.join(root, filename))
+        file, _filter = QFileDialog.getSaveFileName(
+            self, _('Write bundle'), os.path.join(root, filename))
         if not file:
             return
 
@@ -1871,7 +1936,7 @@ class RepoWidget(QWidget):
         sess.setCaptureOutput(True)
         sess.commandFinished.connect(self._copyPatchOutputToClipboard)
 
-    @qtlib.senderSafeSlot(int)
+    @pyqtSlot(int)
     def _copyPatchOutputToClipboard(self, ret):
         if ret == 0:
             sess = self.sender()
@@ -1933,7 +1998,7 @@ class RepoWidget(QWidget):
 
     @pyqtSlot(QAction)
     def _changePhaseByMenu(self, action):
-        phasenum, _ok = action.data().toInt()
+        phasenum = action.data()
         self.changePhase(phasenum)
 
     def rebaseRevision(self):
@@ -2130,7 +2195,7 @@ class RepoWidget(QWidget):
                 _ui = self.repo.ui.copy()
             _ui.ferr = cStringIO.StringIO()
             # avoid circular import of hgqt.run by importing it inplace
-            from tortoisehg.hgqt import run
+            from . import run
             res = run.dispatch(cmd, u=_ui)
             if res:
                 errormsg = _ui.ferr.getvalue().strip()
@@ -2160,7 +2225,7 @@ class RepoWidget(QWidget):
 
     @pyqtSlot(QAction)
     def _runCustomCommandByMenu(self, action):
-        command, showoutput, workingdir = action.data().toPyObject()
+        command, showoutput, workingdir = action.data()
         self.runCustomCommand(command, showoutput, workingdir)
 
     @pyqtSlot(str, list)
@@ -2238,9 +2303,9 @@ class LightRepoWindow(QMainWindow):
 
         s = QSettings()
         s.beginGroup('LightRepoWindow')
-        self.restoreGeometry(s.value('geometry').toByteArray())
-        self.restoreState(s.value('windowState').toByteArray())
-        stbar.setVisible(s.value('statusBar', True).toBool())
+        self.restoreGeometry(qtlib.readByteArray(s, 'geometry'))
+        self.restoreState(qtlib.readByteArray(s, 'windowState'))
+        stbar.setVisible(qtlib.readBool(s, 'statusBar', True))
         s.endGroup()
 
         self.setWindowTitle(_('TortoiseHg: %s') % repoagent.displayName())

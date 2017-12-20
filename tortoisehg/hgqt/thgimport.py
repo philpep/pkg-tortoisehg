@@ -6,16 +6,41 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 import shutil
 import tempfile
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QDir,
+    QTimer,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QGridLayout,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdui, cslist, qtlib, commit
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdui,
+    commit,
+    cslist,
+    qtlib,
+)
 
 _FILE_FILTER = "%s;;%s" % (_("Patch files (*.diff *.patch)"),
                            _("All files (*)"))
@@ -156,9 +181,8 @@ class ImportDialog(QDialog):
 
     def browsefiles(self):
         caption = _("Select patches")
-        filelist = QFileDialog.getOpenFileNames(self, caption,
-                                                self._repoagent.rootPath(),
-                                                _FILE_FILTER)
+        filelist, _filter = QFileDialog.getOpenFileNames(
+            self, caption, self._repoagent.rootPath(), _FILE_FILTER)
         if filelist:
             # Qt file browser uses '/' in paths, even on Windows.
             nl = [unicode(QDir.toNativeSeparators(x)) for x in filelist]
@@ -190,7 +214,7 @@ class ImportDialog(QDialog):
 
     def _targetcommand(self):
         index = self.targetcombo.currentIndex()
-        return self.targetcombo.itemData(index).toPyObject()
+        return self.targetcombo.itemData(index)
 
     @pyqtSlot()
     def _updatep0chk(self):

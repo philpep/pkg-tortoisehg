@@ -145,6 +145,15 @@ class _wconfig(object):
             return self._sections[section]
         except KeyError:
             if self._config[section]:
+                # get around COW behavior introduced by hg c41444a39de2, where
+                # an inner dict may be replaced later on preparewrite(). our
+                # wrapper expects non-empty config[section] instance persists.
+                data = self._config._data
+                try:
+                    data[section] = data[section].preparewrite()
+                except AttributeError:
+                    # hg<4.4 (c41444a39de2)
+                    pass
                 self._sections[section] = _wsortdict(self._config[section])
                 return self._sections[section]
             else:

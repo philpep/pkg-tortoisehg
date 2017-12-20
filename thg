@@ -59,13 +59,26 @@ else:
 import threading
 
 from mercurial import demandimport
-demandimport.ignore.append('win32com.shell')
-demandimport.ignore.append('numpy')  # comtypes.npsupport does try-import
-demandimport.ignore.append('tortoisehg.util.config')
-demandimport.ignore.append('icons_rc')
-demandimport.ignore.append('translations_rc')
-# pygments seems to have trouble on loading plugins (see #4271, #4298)
-demandimport.ignore.extend(['pkgutil', 'pkg_resources'])
+demandimport.ignore.extend([
+    'win32com.shell',
+    'numpy',  # comtypes.npsupport does try-import
+    'tortoisehg.util.config',
+    'tortoisehg.hgqt.icons_rc',
+    'tortoisehg.hgqt.translations_rc',
+    # don't create troublesome demandmods for bunch of Q* attributes
+    'tortoisehg.hgqt.qsci',
+    'tortoisehg.hgqt.qtcore',
+    'tortoisehg.hgqt.qtgui',
+    'tortoisehg.hgqt.qtnetwork',
+    # TODO: fix name resolution in demandimporter and remove these
+    'qsci',
+    'qtcore',
+    'qtgui',
+    'qtnetwork',
+    # pygments seems to have trouble on loading plugins (see #4271, #4298)
+    'pkgutil',
+    'pkg_resources',
+])
 demandimport.enable()
 
 # Verify we can reach TortoiseHg sources first

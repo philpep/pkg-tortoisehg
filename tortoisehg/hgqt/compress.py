@@ -5,11 +5,31 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import csinfo, cmdui, commit, wctxcleaner
+from .qtcore import (
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QDialog,
+    QDialogButtonBox,
+    QGroupBox,
+    QLayout,
+    QSizePolicy,
+    QVBoxLayout,
+)
+
+from ..util.i18n import _
+from . import (
+    cmdui,
+    commit,
+    csinfo,
+    qtlib,
+    wctxcleaner,
+)
 
 class CompressDialog(QDialog):
 
@@ -119,7 +139,7 @@ class CompressDialog(QDialog):
 
     def restoreSettings(self):
         s = QSettings()
-        self.restoreGeometry(s.value('compress/geometry').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'compress/geometry'))
 
     def reject(self):
         self._cmdcontrol.reject()

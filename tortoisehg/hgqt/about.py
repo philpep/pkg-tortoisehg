@@ -11,15 +11,42 @@
 TortoiseHg About dialog - PyQt4 version
 """
 
+from __future__ import absolute_import
+
 import sys
 
-from tortoisehg.hgqt import qtlib
-from tortoisehg.util import version, hglib, paths
-from tortoisehg.util.i18n import _
+from .qtcore import (
+    PYQT_VERSION_STR,
+    QSettings,
+    QSize,
+    QT_VERSION_STR,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QDialog,
+    QDialogButtonBox,
+    QFont,
+    QLabel,
+    QLayout,
+    QPixmap,
+    QPlainTextEdit,
+    QVBoxLayout,
+)
+from .qtnetwork import (
+    QNetworkAccessManager,
+    QNetworkRequest,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from ..util import (
+    hglib,
+    paths,
+    version,
+)
+from ..util.i18n import _
+from . import qtlib
 
 class AboutDialog(QDialog):
     """Dialog for showing info about TortoiseHg"""
@@ -166,7 +193,7 @@ class AboutDialog(QDialog):
 
     def _readsettings(self):
         s = QSettings()
-        self.restoreGeometry(s.value('about/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'about/geom'))
 
     def _writesettings(self):
         s = QSettings()
@@ -211,7 +238,7 @@ class LicenseDialog(QDialog):
 
     def _readsettings(self):
         s = QSettings()
-        self.restoreGeometry(s.value('license/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'license/geom'))
 
     def _writesettings(self):
         s = QSettings()

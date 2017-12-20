@@ -5,17 +5,55 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 
-from mercurial import hg, similar, patch
+from .qtcore import (
+    QAbstractTableModel,
+    QModelIndex,
+    QSettings,
+    QThread,
+    QTimer,
+    Qt,
+    pyqtSignal,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QCheckBox,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QSlider,
+    QSplitter,
+    QTextBrowser,
+    QToolButton,
+    QTreeView,
+    QVBoxLayout,
+)
 
-from tortoisehg.util import hglib, thread2
-from tortoisehg.util.i18n import _
+from mercurial import (
+    hg,
+    patch,
+    similar,
+)
 
-from tortoisehg.hgqt import qtlib, htmlui, cmdui
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import (
+    hglib,
+    thread2,
+)
+from ..util.i18n import _
+from . import (
+    cmdui,
+    htmlui,
+    qtlib,
+)
 
 # Techincal debt
 # Try to cut down on the jitter when findRenames is pressed.  May
@@ -151,10 +189,10 @@ class DetectRenameDialog(QDialog):
         layout.addWidget(self.stbar)
 
         s = QSettings()
-        self.restoreGeometry(s.value('guess/geom').toByteArray())
-        hsplit.restoreState(s.value('guess/hsplit-state').toByteArray())
-        vsplit.restoreState(s.value('guess/vsplit-state').toByteArray())
-        slider.setValue(s.value('guess/simslider').toInt()[0] or 50)
+        self.restoreGeometry(qtlib.readByteArray(s, 'guess/geom'))
+        hsplit.restoreState(qtlib.readByteArray(s, 'guess/hsplit-state'))
+        vsplit.restoreState(qtlib.readByteArray(s, 'guess/vsplit-state'))
+        slider.setValue(qtlib.readInt(s, 'guess/simslider') or 50)
         self.vsplit, self.hsplit = vsplit, hsplit
         QTimer.singleShot(0, self.refresh)
 
@@ -179,7 +217,7 @@ class DetectRenameDialog(QDialog):
             item = QListWidgetItem(hglib.tounicode(x))
             item.orig = x
             self.unrevlist.addItem(item)
-            self.unrevlist.setItemSelected(item, x in self.pats)
+            item.setSelected(x in self.pats)
         if dests:
             self.findbtn.setEnabled(True)
         else:
@@ -282,7 +320,7 @@ class DetectRenameDialog(QDialog):
         self.difftb.setHtml(hu.getdata()[0])
 
     def onUnrevDoubleClicked(self, index):
-        file = hglib.fromunicode(self.unrevlist.model().data(index).toString())
+        file = hglib.fromunicode(self.unrevlist.model().data(index))
         qtlib.editfiles(self.repo, [file])
 
     def accept(self):
@@ -326,11 +364,11 @@ class MatchModel(QAbstractTableModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return None
         if role == Qt.DisplayRole:
             s = self.rows[index.row()][index.column()]
             f = self.displayformats[index.column()]
-            return QVariant(f(s))
+            return f(s)
         '''
         elif role == Qt.TextColorRole:
             src, dst, pct = self.rows[index.row()]
@@ -341,13 +379,13 @@ class MatchModel(QAbstractTableModel):
         elif role == Qt.ToolTipRole:
             # explain what row means?
         '''
-        return QVariant()
+        return None
 
     def headerData(self, col, orientation, role):
         if role != Qt.DisplayRole or orientation != Qt.Horizontal:
-            return QVariant()
+            return None
         else:
-            return QVariant(self.headers[col])
+            return self.headers[col]
 
     def flags(self, index):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled

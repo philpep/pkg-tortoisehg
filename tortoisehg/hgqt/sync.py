@@ -6,18 +6,76 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import os, re
+from __future__ import absolute_import
+
+import os
+import re
 import tempfile
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QAbstractTableModel,
+    QDir,
+    QMimeData,
+    QModelIndex,
+    QPoint,
+    QSettings,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDesktopServices,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFormLayout,
+    QFrame,
+    QGroupBox,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QPushButton,
+    QRadioButton,
+    QSizePolicy,
+    QStackedLayout,
+    QStyle,
+    QToolBar,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
-from mercurial import hg, util, httpconnection
+from mercurial import (
+    hg,
+    httpconnection,
+    util,
+)
 
-from tortoisehg.util import hglib, paths, wconfig
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib, thgrepo
-from tortoisehg.hgqt import bookmark, hgrcutil, hgemail, rebase, resolve
+from ..util import (
+    hglib,
+    paths,
+    wconfig,
+)
+from ..util.i18n import _
+from . import (
+    bookmark,
+    cmdcore,
+    cmdui,
+    hgemail,
+    hgrcutil,
+    qtlib,
+    rebase,
+    resolve,
+    thgrepo,
+)
 
 def parseurl(url):
     assert type(url) == unicode
@@ -64,12 +122,12 @@ class SyncWidget(QWidget, qtlib.TaskWidget):
 
         s = QSettings()
         for opt in ('force', 'new-branch', 'noproxy', 'debug', 'mq'):
-            val = s.value('sync/' + opt, None).toBool()
+            val = qtlib.readBool(s, 'sync/' + opt)
             if val:
                 if opt != 'mq' or 'mq' in self.repo.extensions():
                     self.opts[opt] = val
         for opt in ('remotecmd', 'branch'):
-            val = hglib.fromunicode(s.value('sync/' + opt, None).toString())
+            val = hglib.fromunicode(qtlib.readString(s, 'sync/' + opt))
             if val:
                 self.opts[opt] = val
 
@@ -385,7 +443,7 @@ class SyncWidget(QWidget, qtlib.TaskWidget):
 
     def pathSelected(self, index):
         aliasindex = index.sibling(index.row(), 0)
-        alias = aliasindex.data(Qt.DisplayRole).toString()
+        alias = aliasindex.data(Qt.DisplayRole)
         self.curalias = hglib.fromunicode(alias)
         path = index.model().realUrl(index)
         self.setEditUrl(hglib.tounicode(path))
@@ -579,7 +637,7 @@ class SyncWidget(QWidget, qtlib.TaskWidget):
             if self.targetcheckbox.isChecked():
                 idx = self.targetcombo.currentIndex()
                 if idx != -1:
-                    args = self.targetcombo.itemData(idx).toPyObject()
+                    args = self.targetcombo.itemData(idx)
                     if args[0][2:] not in details:
                         args = ('--rev',) + args[1:]
                     cmdline += args
@@ -976,7 +1034,7 @@ class SyncWidget(QWidget, qtlib.TaskWidget):
         caption = _("Select bundle file")
         _FILE_FILTER = ';;'.join([_("Bundle files (*.hg)"),
                                   _("All files (*)")])
-        bundlefile = QFileDialog.getOpenFileName(
+        bundlefile, _filter = QFileDialog.getOpenFileName(
             self, caption, hglib.tounicode(self.repo.root), _FILE_FILTER)
         if bundlefile:
             # Set the pull source to the selected bundle file
@@ -1154,7 +1212,7 @@ class SaveDialog(QDialog):
         s = QSettings()
         self.updatesubpaths = QCheckBox(_('Update subrepo paths'))
         self.updatesubpaths.setChecked(
-            s.value('sync/updatesubpaths', True).toBool())
+            qtlib.readBool(s, 'sync/updatesubpaths', True))
         self.updatesubpaths.setToolTip(
             _('Update or create a path alias called \'%s\' on all subrepos, '
               'using this URL as the base URL, '
@@ -1429,7 +1487,7 @@ are expanded in the filename.'''))
     @pyqtSlot()
     def _browseClientKey(self):
         e = self._authentries['key']
-        n = QFileDialog.getOpenFileName(
+        n, _f = QFileDialog.getOpenFileName(
             self, _('Select User Certificate Key File'), e.text(),
             ';;'.join([_('PEM files (*.pem *.key)'), _('All files (*)')]))
         if n:
@@ -1438,7 +1496,7 @@ are expanded in the filename.'''))
     @pyqtSlot()
     def _browseClientCert(self):
         e = self._authentries['cert']
-        n = QFileDialog.getOpenFileName(
+        n, _f = QFileDialog.getOpenFileName(
             self, _('Select User Certificate Chain File'), e.text(),
             ';;'.join([_('PEM files (*.pem *.crt *.cer)'), _('All files (*)')]))
         if n:
@@ -1473,7 +1531,7 @@ are expanded in the filename.'''))
         setorclear('insecurehosts', self.host, insecure)
 
         e = self._protocolcombo
-        protocol = hglib.fromunicode(e.itemData(e.currentIndex()).toString())
+        protocol = hglib.fromunicode(e.itemData(e.currentIndex()))
         setorclear('hostsecurity', '%s:minimumprotocol' % self.host, protocol)
 
         cfg.set('auth', self.alias+'.prefix', self.host)
@@ -1509,8 +1567,8 @@ class PathsTree(QTreeView):
 
     def contextMenuEvent(self, event):
         for index in self.selectedRows():
-            alias = index.data(Qt.DisplayRole).toString()
-            url = index.sibling(index.row(), 1).data(Qt.DisplayRole).toString()
+            alias = index.data(Qt.DisplayRole)
+            url = index.sibling(index.row(), 1).data(Qt.DisplayRole)
             self.menuRequest.emit(event.globalPos(), url, alias, self.editable)
             return
 
@@ -1522,7 +1580,7 @@ class PathsTree(QTreeView):
 
     def deleteSelected(self):
         for index in self.selectedRows():
-            alias = index.data(Qt.DisplayRole).toString()
+            alias = index.data(Qt.DisplayRole)
             r = qtlib.QuestionMsgBox(_('Confirm path delete'),
                     _('Delete %s from your repo configuration file?') % alias,
                     parent=self)
@@ -1555,16 +1613,16 @@ class PathsModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
-            return QVariant()
+            return None
         if role == Qt.DisplayRole:
-            return QVariant(self.rows[index.row()][index.column()])
-        return QVariant()
+            return self.rows[index.row()][index.column()]
+        return None
 
     def headerData(self, col, orientation, role=Qt.DisplayRole):
         if role != Qt.DisplayRole or orientation != Qt.Horizontal:
-            return QVariant()
+            return None
         else:
-            return QVariant(self.headers[col])
+            return self.headers[col]
 
     def mimeData(self, indexes):
         urls = []

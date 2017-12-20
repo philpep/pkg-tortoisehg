@@ -21,22 +21,60 @@ import sys
 import tempfile
 import weakref
 
+from .qtcore import (
+    QByteArray,
+    QDir,
+    QEvent,
+    QFile,
+    QObject,
+    QProcess,
+    QSize,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QApplication,
+    QComboBox,
+    QCommonStyle,
+    QColor,
+    QDesktopServices,
+    QDialog,
+    QFont,
+    QFrame,
+    QHBoxLayout,
+    QIcon,
+    QInputDialog,
+    QKeySequence,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPainter,
+    QPalette,
+    QPixmap,
+    QPushButton,
+    QShortcut,
+    QSizePolicy,
+    QStyle,
+    QStyleOptionButton,
+    QVBoxLayout,
+    QWidget,
+)
+
 from mercurial import (
     color,
     extensions,
     util,
 )
 
-from tortoisehg.util import (
+from ..util import (
     editor,
     hglib,
     paths,
     terminal,
 )
-from tortoisehg.util.i18n import _
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util.i18n import _
 
 try:
     import win32con
@@ -46,16 +84,6 @@ except ImportError:
 
 # largest allowed size for widget, defined in <src/gui/kernel/qwidget.h>
 QWIDGETSIZE_MAX = (1 << 24) - 1
-
-if PYQT_VERSION < 0x40704:
-    # QObject.sender() goes wrong if connection made in Qt layer.  consider
-    # using QSignalMapper for zero-argument slots instead.
-    def senderSafeSlot(*types, **opts):
-        def deco(func):
-            return func
-        return deco
-else:
-    senderSafeSlot = pyqtSlot
 
 tmproot = None
 def gettempdir():
@@ -266,6 +294,62 @@ def openshell(root, reponame, ui=None):
                    _('A terminal shell must be configured'))
 
 
+# 'type' argument of QSettings.value() can't be used because:
+#  a) it appears to be broken before PyQt 4.11.x (#4882)
+#  b) it may raise TypeError if a setting has a value of an unexpected type
+
+def readBool(qs, key, default=False):
+    """Read the specified value from QSettings and coerce into bool"""
+    v = qs.value(key, default)
+    if isinstance(v, basestring):
+        # qvariant.cpp:qt_convertToBool()
+        return not (v == '0' or v == 'false' or v == '')
+    return bool(v)
+
+def readByteArray(qs, key, default=b''):
+    """Read the specified value from QSettings and coerce into QByteArray"""
+    v = qs.value(key, default)
+    if v is None:
+        return QByteArray(default)
+    try:
+        return QByteArray(v)
+    except TypeError:
+        return QByteArray(default)
+
+def readInt(qs, key, default=0):
+    """Read the specified value from QSettings and coerce into int"""
+    v = qs.value(key, default)
+    if v is None:
+        return int(default)
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return int(default)
+
+def readString(qs, key, default=''):
+    """Read the specified value from QSettings and coerce into string"""
+    v = qs.value(key, default)
+    if v is None:
+        return unicode(default)
+    try:
+        return unicode(v)
+    except ValueError:
+        return unicode(default)
+
+def readStringList(qs, key, default=()):
+    """Read the specified value from QSettings and coerce into string list"""
+    v = qs.value(key, default)
+    if v is None:
+        return list(default)
+    if isinstance(v, basestring):
+        # qvariant.cpp:convert()
+        return [v]
+    try:
+        return [unicode(e) for e in v]
+    except (TypeError, ValueError):
+        return list(default)
+
+
 def isDarkTheme(palette=None):
     """True if white-on-black color scheme is preferable"""
     if not palette:
@@ -393,7 +477,7 @@ def markup(msg, **styles):
         style[name] = value
     style = ';'.join(['%s: %s' % t for t in style.items()])
     msg = hglib.tounicode(msg)
-    msg = Qt.escape(msg)
+    msg = cgi.escape(msg)
     msg = msg.replace('\n', '<br />')
     return u'<span style="%s">%s</span>' % (style, msg)
 
@@ -699,7 +783,7 @@ def CommonMsgBox(icon, title, main, text='', buttons=QMessageBox.Ok,
     msg.setWindowTitle(title)
     msg.setStandardButtons(buttons)
     for button_id, label in labels:
-        msg.setButtonText(button_id, label)
+        msg.button(button_id).setText(label)
     if defaultbutton:
         msg.setDefaultButton(defaultbutton)
     msg.setText('<b>%s</b>' % main)
@@ -816,6 +900,7 @@ class BadCompletionBlocker(QObject):
     replaces the edit text by the current completion on enter key pressed.
     This is wrong in the following scenario:
 
+    >>> from .qtgui import QKeyEvent
     >>> combo = QComboBox(editable=True)
     >>> combo.addItem('history value')
     >>> combo.setEditText('initial value')
@@ -918,7 +1003,7 @@ class PMButton(QPushButton):
         self.setIcon(icon)
 
     def is_expanded(self):
-        return self.icon().serialNumber() == self.minus.serialNumber()
+        return self.icon().cacheKey() == self.minus.cacheKey()
 
     def is_collapsed(self):
         return not self.is_expanded()
@@ -1102,6 +1187,7 @@ class DialogKeeper(QObject):
 
     closed dialog will be deleted:
 
+    >>> from .qtcore import QEventLoop, QTimer
     >>> def processDeferredDeletion():
     ...     loop = QEventLoop()
     ...     QTimer.singleShot(0, loop.quit)

@@ -17,8 +17,24 @@
 """
 Qt4 widgets to display diffs as blocks
 """
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+
+from __future__ import absolute_import
+
+from .qtcore import (
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QColor,
+    QFrame,
+    QHBoxLayout,
+    QPainter,
+    QPainterPath,
+    QScrollBar,
+    QSizePolicy,
+    QWidget,
+)
 
 class BlockList(QWidget):
     """

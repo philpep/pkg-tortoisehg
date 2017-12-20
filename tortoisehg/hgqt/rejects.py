@@ -5,17 +5,41 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import cStringIO
+
+from . import qsci as Qsci
+from .qtcore import (
+    QPoint,
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QColor,
+    QDialog,
+    QDialogButtonBox,
+    QFontMetrics,
+    QHBoxLayout,
+    QKeySequence,
+    QListWidget,
+    QMessageBox,
+    QToolButton,
+    QVBoxLayout,
+)
 
 from mercurial import patch
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, qscilib, fileencoding, lexers
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4 import Qsci
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    fileencoding,
+    lexers,
+    qscilib,
+    qtlib,
+)
 
 qsci = Qsci.QsciScintilla
 
@@ -90,7 +114,7 @@ class RejectsDialog(QDialog):
         self.saveButton = bb.button(BB.Save)
 
         s = QSettings()
-        self.restoreGeometry(s.value('rejects/geometry').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'rejects/geometry'))
         self.editor.loadSettings(s, 'rejects/editor')
         self.rejectbrowser.loadSettings(s, 'rejects/rejbrowse')
 

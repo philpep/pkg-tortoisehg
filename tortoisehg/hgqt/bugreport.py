@@ -5,19 +5,52 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+from __future__ import absolute_import
+
+import cgi
 import os
-import sys
 import re
+import sys
 
-from mercurial import encoding, extensions
-from tortoisehg.util import hglib, version
-from tortoisehg.util.i18n import _
+from .qtcore import (
+    PYQT_VERSION_STR,
+    QSettings,
+    QT_VERSION_STR,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QLabel,
+    QMessageBox,
+    QTextBrowser,
+    QTextOption,
+    QVBoxLayout,
+    qApp,
+)
+from .qtnetwork import (
+    QNetworkAccessManager,
+    QNetworkRequest,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from mercurial import (
+    encoding,
+    extensions,
+)
+from ..util import (
+    hglib,
+    version,
+)
+from ..util.i18n import _
+from . import qtlib
+
 try:
-    from PyQt4.Qsci import QSCINTILLA_VERSION_STR
+    from .qsci import QSCINTILLA_VERSION_STR
 except (ImportError, AttributeError, RuntimeError):
     # show BugReport dialog even if QScintilla is missing
     # or incompatible (RuntimeError: the sip module implements API v...)
@@ -45,7 +78,7 @@ class BugReport(QDialog):
 
         tb = QTextBrowser()
         self.text = self.gettext(opts)
-        tb.setHtml('<pre>' + Qt.escape(self.text) + '</pre>')
+        tb.setHtml('<pre>' + cgi.escape(self.text) + '</pre>')
         tb.setWordWrapMode(QTextOption.NoWrap)
         layout.addWidget(tb)
 
@@ -158,7 +191,7 @@ class BugReport(QDialog):
 
     def save(self):
         try:
-            fname = QFileDialog.getSaveFileName(self,
+            fname, _filter = QFileDialog.getSaveFileName(self,
                         _('Save error report to'),
                         os.path.join(_safegetcwd(), 'bugreport.txt'),
                         _('Text files (*.txt)'))
@@ -177,7 +210,7 @@ class BugReport(QDialog):
 
     def _readsettings(self):
         s = QSettings()
-        self.restoreGeometry(s.value('bugreport/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'bugreport/geom'))
 
     def _writesettings(self):
         s = QSettings()
@@ -200,13 +233,13 @@ class ExceptionMsgBox(QDialog):
             values = opts.get('values', [])
             msgopts = {}
             for i, val in enumerate(values):
-                msgopts['arg' + str(i)] = Qt.escape(hglib.tounicode(val))
+                msgopts['arg' + str(i)] = cgi.escape(hglib.tounicode(val))
             try:
                 text = text % msgopts
             except Exception, e:
                 print e, msgopts
         else:
-            self._mainlabel = QLabel('<b>%s</b>' % Qt.escape(main),
+            self._mainlabel = QLabel('<b>%s</b>' % cgi.escape(main),
                                      textInteractionFlags=labelflags)
             self.layout().addWidget(self._mainlabel)
 

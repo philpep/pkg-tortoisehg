@@ -5,15 +5,43 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import weakref
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qsci import QsciScintilla
+from .qsci import (
+    QsciScintilla,
+)
+from .qtcore import (
+    QSettings,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QColor,
+    QDialog,
+    QDialogButtonBox,
+    QFont,
+    QHBoxLayout,
+    QLabel,
+    QLayout,
+    QLineEdit,
+    QMessageBox,
+    QProgressBar,
+    QSizePolicy,
+    QStatusBar,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.util.i18n import _
-from tortoisehg.util import hglib
-from tortoisehg.hgqt import cmdcore, qtlib, qscilib
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    qtlib,
+    qscilib,
+)
 
 def startProgress(topic, status):
     topic, item, pos, total, unit = topic, '...', status, None, ''
@@ -529,7 +557,7 @@ class CmdControlDialog(QDialog):
         qs = QSettings()
         qs.beginGroup(self.objectName())
         self.__cmdwidget.readSettings(qs)
-        self.restoreGeometry(qs.value('geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(qs, 'geom'))
         qs.endGroup()
 
     def __writeSettings(self):

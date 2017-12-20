@@ -5,14 +5,47 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
 import os
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, cmdcore, cmdui, csinfo, visdiff, thgrepo
+from .qtcore import (
+    QAbstractTableModel,
+    QItemSelectionModel,
+    QMimeData,
+    QModelIndex,
+    QPoint,
+    QSettings,
+    QUrl,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QActionGroup,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QMenu,
+    QMessageBox,
+    QToolButton,
+    QTreeView,
+    QVBoxLayout,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    csinfo,
+    qtlib,
+    thgrepo,
+    visdiff,
+)
 
 MARGINS = (8, 0, 0, 0)
 
@@ -200,7 +233,7 @@ class ResolveDialog(QDialog):
         self.bbox = bbox
 
         s = QSettings()
-        self.restoreGeometry(s.value('resolve/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'resolve/geom'))
 
         self.refresh()
         self.utree.selectAll()
@@ -249,8 +282,7 @@ class ResolveDialog(QDialog):
 
     @pyqtSlot(QAction)
     def _mergeByAction(self, action):
-        tool = str(action.data().toString())
-        self.merge(tool)
+        self.merge(action.data())
 
     def markresolved(self):
         self.runCommand(self.utree, ['resolve', '--mark'])
@@ -451,11 +483,11 @@ class PathsModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
-            return QVariant()
+            return None
         if role == Qt.DisplayRole:
             data = self.rows[index.row()][index.column()]
-            return QVariant(hglib.tounicode(data))
-        return QVariant()
+            return hglib.tounicode(data)
+        return None
 
     def flags(self, index):
         flags = super(PathsModel, self).flags(index)
@@ -466,9 +498,9 @@ class PathsModel(QAbstractTableModel):
 
     def headerData(self, col, orientation, role=Qt.DisplayRole):
         if role != Qt.DisplayRole or orientation != Qt.Horizontal:
-            return QVariant()
+            return None
         else:
-            return QVariant(self.headers[col])
+            return self.headers[col]
 
     def getPathForIndex(self, index):
         'return root, wfile for the given row'

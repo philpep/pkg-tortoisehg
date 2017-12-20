@@ -5,34 +5,30 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import repotreeitem
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import QFont
+from __future__ import absolute_import
 
 import os
 
-if PYQT_VERSION < 0x40700:
-    class LocalQXmlStreamReader(QXmlStreamReader):
-        def readNextStartElement(self):
-            while self.readNext() != QXmlStreamReader.Invalid:
-                if self.isEndElement():
-                    return False
-                elif self.isStartElement():
-                    return True
-            return False
+from .qtcore import (
+    QAbstractItemModel,
+    QByteArray,
+    QFile,
+    QIODevice,
+    QMimeData,
+    QModelIndex,
+    QUrl,
+    QXmlStreamReader,
+    QXmlStreamWriter,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QFont,
+)
 
-        def skipCurrentElement(self):
-            depth = 1
-            while depth > 0 and self.readNext() != QXmlStreamReader.Invalid:
-                if self.isEndElement():
-                    depth -= 1
-                elif self.isStartElement():
-                    depth += 1
-
-    QXmlStreamReader = LocalQXmlStreamReader
+from ..util import hglib
+from ..util.i18n import _
+from . import repotreeitem
 
 extractXmlElementName = 'reporegextract'
 reporegistryXmlElementName = 'reporegistry'
@@ -55,7 +51,7 @@ def readXml(source, rootElementName):
     itemread = None
     xr = QXmlStreamReader(source)
     if xr.readNextStartElement():
-        ele = str(xr.name().toString())
+        ele = str(xr.name())
         if ele != rootElementName:
             print "unexpected xml element '%s' "\
                   "(was looking for %s)" % (ele, rootElementName)
@@ -164,10 +160,10 @@ class RepoTreeModel(QAbstractItemModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
-            return QVariant()
+            return None
         if role not in (Qt.DisplayRole, Qt.EditRole, Qt.DecorationRole,
                 Qt.FontRole):
-            return QVariant()
+            return None
         item = index.internalPointer()
         if role == Qt.FontRole and item is self._activeRepoItem:
             font = QFont()
@@ -181,7 +177,7 @@ class RepoTreeModel(QAbstractItemModel):
             if orientation == Qt.Horizontal:
                 if section == 1:
                     return _('Path')
-        return QVariant()
+        return None
 
     def flags(self, index):
         if not index.isValid():
@@ -257,8 +253,7 @@ class RepoTreeModel(QAbstractItemModel):
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid() or role != Qt.EditRole:
             return False
-        s = value.toString()
-        if s.isEmpty():
+        if not value:
             return False
         item = index.internalPointer()
         if item.setData(index.column(), value):

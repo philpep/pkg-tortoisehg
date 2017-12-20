@@ -5,17 +5,37 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import re, urllib
+from __future__ import absolute_import
 
-from PyQt4.QtCore import Qt, pyqtSignal, pyqtSlot
-from PyQt4.QtCore import QTimer
-from PyQt4.QtGui import *
+import re
+import urllib
+
+from .qtcore import (
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QColor,
+    QDialogButtonBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPalette,
+    QPushButton,
+    QSizePolicy,
+    QStyle,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
 from mercurial.i18n import _ as hggettext
 
-from tortoisehg.util.i18n import _
-from tortoisehg.util import hglib
-from tortoisehg.hgqt import qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import qtlib
 
 # Strings and regexes used to convert hashes and subrepo paths into links
 _hashregex = re.compile(r'\b[0-9a-fA-F]{12,}')

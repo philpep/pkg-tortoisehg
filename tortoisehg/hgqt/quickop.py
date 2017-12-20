@@ -5,16 +5,42 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import os, sys
+from __future__ import absolute_import
+
+import os
+import sys
+
+from .qtcore import (
+    QObject,
+    QSettings,
+    Qt,
+)
+from .qtgui import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QKeySequence,
+    QLabel,
+    QHBoxLayout,
+    QPushButton,
+    QShortcut,
+    QVBoxLayout,
+)
 
 from mercurial import util
 
-from tortoisehg.util import hglib, shlib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, status, cmdcore, cmdui, lfprompt
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import (
+    hglib,
+    shlib,
+)
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    lfprompt,
+    qtlib,
+    status,
+)
 
 LABELS = { 'add': (_('Checkmark files to add'), _('Add')),
            'forget': (_('Checkmark files to forget'), _('Forget')),
@@ -46,7 +72,7 @@ class QuickOpDialog(QDialog):
         self.setWindowIcon(qtlib.geticon(ICONS[command]))
 
         layout = QVBoxLayout()
-        layout.setMargin(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
         toplayout = QVBoxLayout()
@@ -125,13 +151,14 @@ class QuickOpDialog(QDialog):
 
         s = QSettings()
         stwidget.loadSettings(s, 'quickop')
-        self.restoreGeometry(s.value('quickop/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'quickop/geom'))
         if hasattr(self, 'chk'):
             if self.command == 'revert':
-                self.chk.setChecked(s.value('quickop/nobackup', True).toBool())
+                self.chk.setChecked(
+                    qtlib.readBool(s, 'quickop/nobackup', True))
             elif self.command == 'remove':
                 self.chk.setChecked(
-                    s.value('quickop/forceremove', False).toBool())
+                    qtlib.readBool(s, 'quickop/forceremove', False))
         self.stwidget = stwidget
         self.stwidget.refreshWctx()
         QShortcut(QKeySequence('Ctrl+Return'), self, self.accept)

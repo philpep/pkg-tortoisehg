@@ -8,6 +8,8 @@
 # See mercurial/extensions.py, comments to wrapfunction, for this approach
 # to extending repositories and change contexts.
 
+from __future__ import absolute_import
+
 import os
 import sys
 import shutil
@@ -15,15 +17,34 @@ import tempfile
 import re
 import time
 
-from PyQt4.QtCore import *
+from .qtcore import (
+    QFile,
+    QFileSystemWatcher,
+    QIODevice,
+    QObject,
+    QSignalMapper,
+    pyqtSignal,
+    pyqtSlot,
+)
 
-from mercurial import hg, error, bundlerepo, extensions, filemerge, node
-from mercurial import localrepo, subrepo
 from hgext import mq
+from mercurial import (
+    bundlerepo,
+    error,
+    extensions,
+    filemerge,
+    hg,
+    localrepo,
+    node,
+    subrepo,
+)
 
-from tortoisehg.util import hglib, paths
-from tortoisehg.util.patchctx import patchctx
-from tortoisehg.hgqt import cmdcore, qtlib
+from ..util import (
+    hglib,
+    paths,
+)
+from ..util.patchctx import patchctx
+from . import cmdcore
 
 _repocache = {}
 _kbfregex = re.compile(r'^\.kbf/')
@@ -610,14 +631,10 @@ class RepoManager(QObject):
 
     _SIGNALMAP = [
         # source, dest
-        (SIGNAL('configChanged()'),
-         SIGNAL('configChanged(QString)')),
-        (SIGNAL('repositoryDestroyed()'),
-         SIGNAL('repositoryDestroyed(QString)')),
-        (SIGNAL('serviceStopped()'),
-         SLOT('_tryCloseRepoAgent(QString)')),
-        (SIGNAL('busyChanged(bool)'),
-         SLOT('_mapBusyChanged(QString)')),
+        ('configChanged', 'configChanged'),
+        ('repositoryDestroyed', 'repositoryDestroyed'),
+        ('serviceStopped', '_tryCloseRepoAgent'),
+        ('busyChanged', '_mapBusyChanged'),
         ]
 
     def __init__(self, ui, parent=None):
@@ -630,7 +647,7 @@ class RepoManager(QObject):
         for _sig, slot in self._SIGNALMAP:
             mapper = QSignalMapper(self)
             self._sigmappers.append(mapper)
-            QObject.connect(mapper, SIGNAL('mapped(QString)'), self, slot)
+            mapper.mapped[str].connect(getattr(self, slot))
 
     def openRepoAgent(self, path):
         """Return RepoAgent for the specified path and increment refcount"""
@@ -646,7 +663,7 @@ class RepoManager(QObject):
         assert agent.parent() is None
         agent.setParent(self)
         for (sig, _slot), mapper in zip(self._SIGNALMAP, self._sigmappers):
-            QObject.connect(agent, sig, mapper, SLOT('map()'))
+            getattr(agent, sig).connect(mapper.map)
             mapper.setMapping(agent, agent.rootPath())
         agent.repositoryChanged.connect(self._mapRepositoryChanged)
         agent.progressReceived.connect(self._mapProgressReceived)
@@ -686,7 +703,7 @@ class RepoManager(QObject):
         del self._openagents[path]
         # TODO: disconnected automatically if _repocache does not exist
         for (sig, _slot), mapper in zip(self._SIGNALMAP, self._sigmappers):
-            QObject.disconnect(agent, sig, mapper, SLOT('map()'))
+            getattr(agent, sig).disconnect(mapper.map)
             mapper.removeMappings(agent)
         agent.repositoryChanged.disconnect(self._mapRepositoryChanged)
         agent.progressReceived.disconnect(self._mapProgressReceived)
@@ -703,7 +720,7 @@ class RepoManager(QObject):
         """Return list of root paths of open repositories"""
         return self._openagents.keys()
 
-    @qtlib.senderSafeSlot(int)
+    @pyqtSlot(int)
     def _mapRepositoryChanged(self, flags):
         agent = self.sender()
         assert isinstance(agent, RepoAgent)
@@ -714,7 +731,7 @@ class RepoManager(QObject):
         agent, _refcount = self._openagents[unicode(path)]
         self.busyChanged.emit(path, agent.isBusy())
 
-    @qtlib.senderSafeSlot(cmdcore.ProgressMessage)
+    @pyqtSlot(cmdcore.ProgressMessage)
     def _mapProgressReceived(self, progress):
         agent = self.sender()
         assert isinstance(agent, RepoAgent)

@@ -27,7 +27,7 @@ things, you will need to enable **git** patches via::
 Mercurial 1.5 improves its behavior in this regard.  It will warn you
 when git diffs are required, or sometimes upgrade to the git format
 automatically.  See also the
-`diff section <https://www.mercurial-scm.org/mercurial/hgrc.5.html#diff>`_ of
+`diff section <https://www.mercurial-scm.org/doc/hgrc.5.html#diff>`_ of
 the hgrc documentation.
 
 Mercurial's patch routines do not deal well with mixed EOLN between
@@ -44,7 +44,7 @@ source files and patches.  The **patch.eol** setting was introduced in
 	The only downside is that you cannot make a patch that changes the
 	line endings of a source file.
 
-See also the `patch section <https://www.mercurial-scm.org/mercurial/hgrc.5.html#patch>`_
+See also the `patch section <https://www.mercurial-scm.org/doc/hgrc.5.html#patch>`_
 of the hgrc documentation.
 
 Applying a patch is not a foolproof operation.  If the source file has
@@ -98,7 +98,7 @@ repository.
 
 .. note::
 	You must configure
-	`SMTP <https://www.mercurial-scm.org/mercurial/hgrc.5.html#smtp>`_
+	`SMTP <https://www.mercurial-scm.org/doc/hgrc.5.html#smtp>`_
 	to send patches via email
 
 Import Patches

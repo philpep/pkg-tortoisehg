@@ -5,18 +5,72 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
+import cgi
 import os
 import re
 
-from mercurial import ui, hg, error, commands, match, util, subrepo
+from .qtcore import (
+    QAbstractTableModel,
+    QMimeData,
+    QModelIndex,
+    QSettings,
+    QThread,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QAction,
+    QCheckBox,
+    QCompleter,
+    QDialog,
+    QFont,
+    QFrame,
+    QGridLayout,
+    QKeySequence,
+    QLabel,
+    QLineEdit,
+    QHBoxLayout,
+    QMenu,
+    QPushButton,
+    QRadioButton,
+    QShortcut,
+    QTableView,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.hgqt import htmlui, visdiff, qtlib, htmldelegate, thgrepo, cmdui, settings
-from tortoisehg.hgqt import filedialogs, fileview
-from tortoisehg.util import paths, hglib, thread2
-from tortoisehg.util.i18n import _
+from mercurial import (
+    commands,
+    error,
+    hg,
+    match,
+    subrepo,
+    ui,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import (
+    hglib,
+    paths,
+    thread2,
+)
+from ..util.i18n import _
+from . import (
+    cmdui,
+    filedialogs,
+    fileview,
+    htmldelegate,
+    htmlui,
+    qtlib,
+    settings,
+    thgrepo,
+    visdiff,
+)
 
 # This widget can be embedded in any application that would like to
 # provide search features
@@ -37,7 +91,7 @@ class SearchWidget(QWidget, qtlib.TaskWidget):
         mainvbox.setSpacing(6)
 
         hbox = QHBoxLayout()
-        hbox.setMargin(2)
+        hbox.setContentsMargins(2, 2, 2, 2)
         le = QLineEdit()
         if hasattr(le, 'setPlaceholderText'): # Qt >= 4.7
             le.setPlaceholderText(_('### regular expression search pattern ###'))
@@ -145,8 +199,8 @@ class SearchWidget(QWidget, qtlib.TaskWidget):
 
         repoid = hglib.shortrepoid(repo)
         s = QSettings()
-        sh = list(s.value('grep/search-'+repoid).toStringList())
-        ph = list(s.value('grep/paths-'+repoid).toStringList())
+        sh = qtlib.readStringList(s, 'grep/search-' + repoid)
+        ph = qtlib.readStringList(s, 'grep/paths-' + repoid)
         self.pathshistory = [p for p in ph if p]
         self.searchhistory = [s for s in sh if s]
         self.setCompleters()
@@ -403,7 +457,7 @@ class HistorySearchThread(QThread):
                         if (haslf or haskbf) and thgrepo.isBfStandin(fname):
                             raise ValueError
                         text = hglib.tounicode(text)
-                        text = Qt.escape(text)
+                        text = cgi.escape(text)
                         text = '<b>%s</b> <span>%s</span>' % (addremove, text)
                         fname = hglib.tounicode(fname)
                         user = hglib.tounicode(user)
@@ -708,16 +762,16 @@ class MatchModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
-            return QVariant()
+            return None
         if role == Qt.DisplayRole:
-            return QVariant(self.rows[index.row()][index.column()])
-        return QVariant()
+            return self.rows[index.row()][index.column()]
+        return None
 
     def headerData(self, col, orientation, role=Qt.DisplayRole):
         if role != Qt.DisplayRole or orientation != Qt.Horizontal:
-            return QVariant()
+            return None
         else:
-            return QVariant(self.headers[col])
+            return self.headers[col]
 
     def flags(self, index):
         flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled

@@ -5,21 +5,62 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import os
+from __future__ import absolute_import
+
 import errno
+import os
 
-from mercurial import extensions, error, util
+from .qtcore import (
+    QAbstractTableModel,
+    QPointF,
+    QRectF,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QCheckBox,
+    QColor,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPixmap,
+    QPolygonF,
+    QSizePolicy,
+    QSplitter,
+    QStackedWidget,
+    QTableView,
+    QToolBar,
+    QVBoxLayout,
+    QWidget,
+    QWidgetAction,
+)
 
-from tortoisehg.hgqt import qtlib, cmdcore, cmdui, update, revdetails
-from tortoisehg.hgqt.qtlib import geticon
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
+from mercurial import (
+    error,
+    extensions,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+    revdetails,
+    update,
+)
+from .qtlib import geticon
 
 PATCHCACHEPATH = 'thgpbcache'
-nullvariant = QVariant()
+nullvariant = None
 
 class PatchBranchWidget(QWidget, qtlib.TaskWidget):
     '''
@@ -400,7 +441,7 @@ class PatchBranchWidget(QWidget, qtlib.TaskWidget):
         model = self.patchlistmodel
         col = model._columns.index('Name')
         patchIndex = model.createIndex(index.row(), col)
-        return str(model.data(patchIndex).toString())
+        return str(model.data(patchIndex))
 
     def updatePatchCache(self, patchname):
         # TODO: Parameters should include rev, as one patch may have several heads
@@ -449,7 +490,7 @@ class PatchBranchWidget(QWidget, qtlib.TaskWidget):
         if len(indexes) == 0:
             return None
         index = indexes[0]
-        return str(index.sibling(index.row(), C_NAME).data().toString())
+        return str(index.sibling(index.row(), C_NAME).data())
 
     def show_patch_cmenu(self, pos):
         """Context menu for selected patch"""
@@ -671,9 +712,9 @@ class PatchBranchModel(QAbstractTableModel):
 
         if role == Qt.DisplayRole:
             text = self._columnmap[column](ctx, gnode)
-            if not isinstance(text, (QString, unicode)):
+            if not isinstance(text, unicode):
                 text = hglib.tounicode(text)
-            return QVariant(text)
+            return text
         elif role == Qt.ForegroundRole:
             return gnode.node.color
         elif role == Qt.DecorationRole:
@@ -684,9 +725,9 @@ class PatchBranchModel(QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                return QVariant(self._headers[section])
+                return self._headers[section]
             if role == Qt.TextAlignmentRole:
-                return QVariant(Qt.AlignLeft)
+                return Qt.AlignLeft
         return nullvariant
 
     # end of functions required to subclass QAbstractTableModel
@@ -813,7 +854,7 @@ class PatchBranchModel(QAbstractTableModel):
             circle(0.5 * radius)
 
         painter.end()
-        return QVariant(pix)
+        return pix
 
 class PNewDialog(QDialog):
     def __init__(self, parent=None):

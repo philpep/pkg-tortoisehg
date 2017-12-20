@@ -5,15 +5,38 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import os, tempfile
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from mercurial import util, error
-from tortoisehg.util import paths, wconfig, hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib
-from tortoisehg.hgqt.serve_ui import Ui_ServeDialog
-from tortoisehg.hgqt.webconf import WebconfForm
+from __future__ import absolute_import
+
+import os
+import tempfile
+
+from .qtcore import (
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QDialog,
+    QSystemTrayIcon,
+)
+
+from mercurial import (
+    error,
+    util,
+)
+
+from ..util import (
+    hglib,
+    paths,
+    wconfig,
+)
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+)
+from .serve_ui import Ui_ServeDialog
+from .webconf import WebconfForm
 
 class ServeDialog(QDialog):
     """Dialog for serving repositories via web"""

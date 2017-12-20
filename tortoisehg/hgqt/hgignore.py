@@ -5,18 +5,50 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 import re
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QEvent,
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSignal,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMenu,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+)
 
-from mercurial import commands, match, util, error
+from mercurial import (
+    commands,
+    error,
+    match,
+    util,
+)
 
-from tortoisehg.util.i18n import _
-from tortoisehg.util import shlib, hglib
-
-from tortoisehg.hgqt import qtlib, qscilib
+from ..util import (
+    hglib,
+    shlib,
+)
+from ..util.i18n import _
+from . import (
+    qscilib,
+    qtlib,
+)
 
 class HgignoreDialog(QDialog):
     'Edit a repository .hgignore file'
@@ -125,7 +157,7 @@ class HgignoreDialog(QDialog):
         QTimer.singleShot(0, self.refresh)
 
         s = QSettings()
-        self.restoreGeometry(s.value('hgignore/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'hgignore/geom'))
 
     @property
     def repo(self):
@@ -283,7 +315,7 @@ class HgignoreDialog(QDialog):
         for i, u in enumerate(self.lclunknowns):
             if u in self.pats:
                 item = self.unknownlist.item(i)
-                self.unknownlist.setItemSelected(item, True)
+                item.setSelected(True)
                 self.unknownlist.setCurrentItem(item)
                 self.le.setText(u)
         self.pats = []

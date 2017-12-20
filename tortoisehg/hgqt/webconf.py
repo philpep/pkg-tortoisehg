@@ -5,13 +5,36 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from tortoisehg.util import hglib, wconfig
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib
-from tortoisehg.hgqt.webconf_ui import Ui_WebconfForm
+
+from .qtcore import (
+    QAbstractTableModel,
+    QModelIndex,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFontMetrics,
+    QFormLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QStyle,
+    QToolButton,
+    QWidget,
+)
+
+from ..util import (
+    hglib,
+    wconfig,
+)
+from ..util.i18n import _
+from . import qtlib
+from .webconf_ui import Ui_WebconfForm
 
 _FILE_FILTER = ';;'.join([_('Config files (*.conf *.config *.ini)'),
                           _('All files (*)')])
@@ -72,7 +95,7 @@ class WebconfForm(QWidget):
         """current webconf object"""
         def curconf(w):
             i = w.currentIndex()
-            _path, conf = unicode(w.itemText(i)), w.itemData(i).toPyObject()
+            _path, conf = unicode(w.itemText(i)), w.itemData(i)
             return conf
 
         return curconf(self._qui.path_edit)
@@ -102,7 +125,7 @@ class WebconfForm(QWidget):
 
     @pyqtSlot()
     def on_open_button_clicked(self):
-        path = QFileDialog.getOpenFileName(
+        path, _filter = QFileDialog.getOpenFileName(
             self, _('Open hgweb config'),
             getattr(self.webconf, 'path', None) or '', _FILE_FILTER)
         if path:
@@ -117,7 +140,7 @@ class WebconfForm(QWidget):
 
     @pyqtSlot()
     def on_save_button_clicked(self):
-        path = QFileDialog.getSaveFileName(
+        path, _filter = QFileDialog.getSaveFileName(
             self, _('Save hgweb config'),
             getattr(self.webconf, 'path', None) or '', _FILE_FILTER)
         if path:

@@ -136,7 +136,7 @@ Simpler form with url-embedded name can also be used::
 	without saving the password. So, in both cases, it is effectively
 	reverting to the default behaviour.
 
-Consult `[auth] <https://www.mercurial-scm.org/mercurial/hgrc.5.html#auth>`_
+Consult `[auth] <https://www.mercurial-scm.org/doc/hgrc.5.html#auth>`_
 section documentation for more details.
 
 **Repository configuration (SMTP)**

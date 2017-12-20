@@ -7,15 +7,41 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import os, re
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import os
+import re
 
-from tortoisehg.hgqt import cmdcore, cmdui, lfprompt, qtlib, revert, visdiff
-from tortoisehg.hgqt import customtools, rejects
-from tortoisehg.util.i18n import _
-from tortoisehg.util import hglib, shlib
+from .qtcore import (
+    QMimeData,
+    QObject,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QApplication,
+    QFileDialog,
+    QMenu,
+    QWidget,
+)
+
+from ..util import (
+    hglib,
+    shlib,
+)
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    customtools,
+    lfprompt,
+    qtlib,
+    rejects,
+    revert,
+    visdiff,
+)
 
 def _lcanonpaths(fds):
     return [hglib.fromunicode(e.canonicalFilePath()) for e in fds]
@@ -126,8 +152,7 @@ class FilectxActions(QObject):
                 act.setShortcutContext(Qt.WidgetWithChildrenShortcut)
             if tip:
                 act.setStatusTip(tip)
-            QObject.connect(act, SIGNAL('triggered()'),
-                            self, SLOT('%s()' % name))
+            act.triggered.connect(getattr(self, name))
             self._addAction(name, act, fdfilters)
 
         self._initAdditionalActions()
@@ -305,7 +330,7 @@ class FilectxActions(QObject):
             if ext:
                 extfilter.insert(0, "*%s" % ext)
 
-            result = QFileDialog.getSaveFileName(
+            result, _filter = QFileDialog.getSaveFileName(
                 self.parent(), _("Save file to"), filename,
                 ";;".join(extfilter))
             if not result:
@@ -444,7 +469,7 @@ class FilectxActions(QObject):
 
     @pyqtSlot(QAction)
     def _runCustomCommandByMenu(self, action):
-        name = str(action.data().toString())
+        name = str(action.data())
         fdfilters = self._customactions[name][1]
         fds = _filterby(fdfilters, self._selfds)
         files = [hglib.fromunicode(fd.filePath()) for fd in fds]
@@ -683,7 +708,7 @@ class WctxActions(FilectxActions):
         fdfilters = (_single, _isfile, _filestatus('?'), _anydeleted)
         return menu.menuAction(), fdfilters
 
-    @qtlib.senderSafeSlot()
+    @pyqtSlot()
     def _updateRenameFileMenu(self):
         menu = self.sender()
         assert isinstance(menu, QMenu)
@@ -714,7 +739,7 @@ class WctxActions(FilectxActions):
         menu.triggered.connect(self._remergeFileWith)
         return menu.menuAction(), (_notsubroot, _mergestatus('U'))
 
-    @qtlib.senderSafeSlot()
+    @pyqtSlot()
     def _populateRemergeFileMenu(self):
         menu = self.sender()
         assert isinstance(menu, QMenu)

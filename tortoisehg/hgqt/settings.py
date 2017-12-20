@@ -5,20 +5,80 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 
-from mercurial import util, error, extensions, phases
+from .qtcore import (
+    QEvent,
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QCompleter,
+    QDialog,
+    QDialogButtonBox,
+    QDirModel,
+    QFileDialog,
+    QFont,
+    QFontDialog,
+    QFormLayout,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QIcon,
+    QIntValidator,
+    QLabel,
+    QLineEdit,
+    QListView,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPalette,
+    QPushButton,
+    QRadioButton,
+    QStackedWidget,
+    QStyle,
+    QTabWidget,
+    QTextBrowser,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.util import hglib, paths, wconfig, i18n, editor
-from tortoisehg.util import terminal, gpg
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, qscilib, thgrepo, customtools, fileencoding
+from mercurial import (
+    error,
+    extensions,
+    phases,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import (
+    editor,
+    gpg,
+    hglib,
+    i18n,
+    paths,
+    terminal,
+    wconfig,
+)
+from ..util.i18n import _
+from . import (
+    customtools,
+    fileencoding,
+    qscilib,
+    qtlib,
+    thgrepo,
+)
 
 if os.name == 'nt':
-    from tortoisehg.util import bugtraq
+    from ..util import bugtraq
     _hasbugtraq = True
 else:
     _hasbugtraq = False
@@ -52,7 +112,7 @@ class SettingsCombo(QComboBox):
             self.previous = []
         else:
             settings = opts['settings']
-            slist = settings.value('settings/'+opts['cpath']).toStringList()
+            slist = qtlib.readStringList(settings, 'settings/' + opts['cpath'])
             self.previous = [unicode(s) for s in slist if s]
         self.setMinimumWidth(ENTRY_WIDTH)
 
@@ -844,6 +904,25 @@ INFO = (
     _fi(_('SSH Command'), 'ui.ssh', genEditCombo,
         _('Command to use for SSH connections.<p>'
           'Default: "ssh" or "TortoisePlink.exe -ssh -2" (Windows)')),
+    _fi(_('<b>Subrepository Features:</b>'), None, genSpacer, ''),
+    _fi(_('Allow Hg Subrepos'), 'subrepos.hg:allowed', genBoolRBGroup,
+        _('Whether Mercurial subrepositories are allowed in the working '
+          'directory. '
+          'Default: True')),
+    _fi(_('Allow Git Subrepos'), 'subrepos.git:allowed', genBoolRBGroup,
+        _('Whether Git subrepositories are allowed in the working '
+          'directory. '
+          'Default: False'
+          '<p><a href="%s">See the security note</a> before enabling '
+          'Git subrepos.')
+        % 'https://www.mercurial-scm.org/doc/hgrc.5.html#subrepos'),
+    _fi(_('Allow SVN Subrepos'), 'subrepos.svn:allowed', genBoolRBGroup,
+        _('Whether Subversion subrepositories are allowed in the working '
+          'directory. '
+          'Default: False'
+          '<p><a href="%s">See the security note</a> before enabling '
+          'Subversion subrepos.')
+        % 'https://www.mercurial-scm.org/doc/hgrc.5.html#subrepos'),
     )),
 
 ({'name': 'web', 'label': _('Server'), 'icon': 'hg-serve'}, (
@@ -1200,15 +1279,14 @@ class SettingsDialog(QDialog):
             print 'Please install https://code.google.com/archive/p/iniparse/'
 
         if not focus:
-            focus = QSettings().value('settings/lastpage', 'log').toString()
-        focus = unicode(focus)
+            focus = qtlib.readString(QSettings(), 'settings/lastpage', 'log')
 
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         s = QSettings()
         self.settings = s
-        self.restoreGeometry(s.value('settings/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'settings/geom'))
 
         def username():
             name = util.username()

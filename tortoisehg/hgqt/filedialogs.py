@@ -17,17 +17,54 @@
 Qt4 dialogs to display hg revisions of a file
 """
 
+from __future__ import absolute_import
+
 import difflib
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, repomodel, blockmatcher, lexers
-from tortoisehg.hgqt import filectxactions, fileview, repoview, revpanel
-from tortoisehg.hgqt.qscilib import Scintilla
+from .qsci import (
+    QsciScintilla,
+)
+from .qtcore import (
+    QEvent,
+    QItemSelectionModel,
+    QPoint,
+    QSettings,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QAction,
+    QColor,
+    QDesktopServices,
+    QFrame,
+    QKeySequence,
+    QHBoxLayout,
+    QMainWindow,
+    QMenu,
+    QPainter,
+    QPen,
+    QSplitter,
+    QToolBar,
+    QVBoxLayout,
+    QWidget,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qsci import QsciScintilla
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    blockmatcher,
+    filectxactions,
+    fileview,
+    lexers,
+    qtlib,
+    repomodel,
+    repoview,
+    revpanel,
+)
+from .qscilib import Scintilla
 
 sides = ('left', 'right')
 otherside = {'left': 'right', 'right': 'left'}
@@ -126,7 +163,7 @@ class _AbstractFileDialog(QMainWindow):
         self.setupUi()
         self._show_rev = None
 
-        assert not isinstance(filename, (unicode, QString))
+        assert not isinstance(filename, unicode)
         self.filename = filename
 
         self.setWindowTitle(_('Hg file log viewer [%s] - %s')
@@ -176,9 +213,9 @@ class FileLogDialog(_AbstractFileDialog):
         s.beginGroup('filelog')
         try:
             self.textView.loadSettings(s, 'fileview')
-            self.restoreGeometry(s.value('geom').toByteArray())
-            self.splitter.restoreState(s.value('splitter').toByteArray())
-            self.revpanel.set_expanded(s.value('revpanel.expanded').toBool())
+            self.restoreGeometry(qtlib.readByteArray(s, 'geom'))
+            self.splitter.restoreState(qtlib.readByteArray(s, 'splitter'))
+            self.revpanel.set_expanded(qtlib.readBool(s, 'revpanel.expanded'))
         finally:
             s.endGroup()
 
@@ -216,7 +253,7 @@ class FileLogDialog(_AbstractFileDialog):
 
         vbox = QVBoxLayout()
         vbox.setSpacing(0)
-        vbox.setMargin(0)
+        vbox.setContentsMargins(0, 0, 0, 0)
         self.contentframe.setLayout(vbox)
 
         self.revpanel = revpanel.RevPanelWidget(self.repo)
@@ -393,8 +430,8 @@ class FileDiffDialog(_AbstractFileDialog):
         s = QSettings()
         s.beginGroup('filediff')
         try:
-            self.restoreGeometry(s.value('geom').toByteArray())
-            self.splitter.restoreState(s.value('splitter').toByteArray())
+            self.restoreGeometry(qtlib.readByteArray(s, 'geom'))
+            self.splitter.restoreState(qtlib.readByteArray(s, 'splitter'))
         finally:
             s.endGroup()
 
@@ -616,7 +653,7 @@ class FileDiffDialog(_AbstractFileDialog):
         self.filedata[side] = data.splitlines()
         self.update_diff(keeppos=otherside[side])
 
-    @qtlib.senderSafeSlot()
+    @pyqtSlot()
     def _onRevisionSelectionChanged(self):
         assert isinstance(self.sender(), QItemSelectionModel)
         self._updateFileActionsForSelection(self.sender())
@@ -757,7 +794,7 @@ class FileDiffDialog(_AbstractFileDialog):
             self.update_page_steps(keeppos)
             self.timer.start()
 
-    @qtlib.senderSafeSlot()
+    @pyqtSlot()
     def _syncColumnsVisibility(self):
         src = self.sender()
         dest = dict(zip(self._repoViews, reversed(self._repoViews)))[src]

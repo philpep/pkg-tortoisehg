@@ -5,20 +5,42 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
-import subprocess
-import stat
-import threading
 import re
+import stat
+import subprocess
+import threading
 
-from mercurial import util, error, match, scmutil, copies
+from .qtcore import (
+    QTimer,
+    pyqtSlot,
+)
+from .qtgui import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QListWidget,
+    QMessageBox,
+    QShortcut,
+    QVBoxLayout,
+)
 
-from tortoisehg.util.i18n import _
-from tortoisehg.util import hglib
-from tortoisehg.hgqt import qtlib
+from mercurial import (
+    copies,
+    error,
+    match,
+    scmutil,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import qtlib
 
 # Match parent2 first, so 'parent1?' will match both parent1 and parent
 _regex = '\$(parent2|parent1?|child|plabel1|plabel2|clabel|repo|phash1|phash2|chash)'

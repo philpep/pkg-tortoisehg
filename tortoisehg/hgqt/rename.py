@@ -6,16 +6,36 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import os, sys
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import os
+import sys
+
+from .qtcore import (
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+)
 
 from mercurial import util
 
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib, manifestmodel
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    manifestmodel,
+    qtlib,
+)
 
 class RenameWidget(cmdui.AbstractCmdWidget):
 
@@ -106,7 +126,8 @@ class RenameWidget(cmdui.AbstractCmdWidget):
         FD = QFileDialog
         if os.path.isfile(self._sourceFile()):
             caption = _('Select Source File')
-            path = FD.getOpenFileName(self, caption, '', '', None, FD.ReadOnly)
+            path, _filter = FD.getOpenFileName(self, caption, '', '', None,
+                                               FD.ReadOnly)
         else:
             caption = _('Select Source Folder')
             path = FD.getExistingDirectory(self, caption, '',
@@ -123,7 +144,7 @@ class RenameWidget(cmdui.AbstractCmdWidget):
             caption = _('Select Destination File')
         else:
             caption = _('Select Destination Folder')
-        path = FD.getSaveFileName(self, caption)
+        path, _filter = FD.getSaveFileName(self, caption)
         relpath = self.to_relative_path(path)
         if not relpath:
             return

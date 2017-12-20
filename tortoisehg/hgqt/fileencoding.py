@@ -5,12 +5,17 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+from __future__ import absolute_import
+
 import codecs
 
-from PyQt4.QtGui import QActionGroup
+from .qtgui import (
+    QActionGroup,
+)
 
 from mercurial import encoding
-from tortoisehg.util.i18n import _
+
+from ..util.i18n import _
 
 # List of encoding names which are likely used, based on the Chromium
 # source <chrome/browser/character_encoding.cc> and the Python documentation
@@ -167,7 +172,7 @@ def addActionsToMenu(menu, group):
     localeacts = []
     otheracts = []
     for a in group.actions():
-        enc = str(a.data().toString())
+        enc = str(a.data())
         if enc in localeencs:
             localeacts.append(a)
         else:
@@ -181,7 +186,7 @@ def addActionsToMenu(menu, group):
 def findActionByName(group, name):
     cname = canonname(name)
     for a in group.actions():
-        if str(a.data().toString()) == cname:
+        if str(a.data()) == cname:
             return a
     raise LookupError('no encoding action: %s' % name)
 
@@ -189,7 +194,7 @@ def checkedActionName(group):
     a = group.checkedAction()
     if not a:
         return ''
-    return str(a.data().toString())
+    return str(a.data())
 
 def checkActionByName(group, name):
     try:

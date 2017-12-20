@@ -5,12 +5,36 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from tortoisehg.hgqt import qtlib, cmdui
-from tortoisehg.util.i18n import _
+from __future__ import absolute_import
 
-from PyQt4.Qsci import QsciScintilla, QsciAPIs, QsciLexerPython
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qsci import (
+    QsciAPIs,
+    QsciLexerPython,
+    QsciScintilla,
+)
+from .qtcore import (
+    QSize,
+    Qt,
+    pyqtSignal,
+)
+from .qtgui import (
+    QColor,
+    QDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QListWidget,
+    QShortcut,
+    QSizePolicy,
+    QVBoxLayout,
+)
+
+from ..util.i18n import _
+from . import (
+    cmdui,
+    qtlib,
+)
 
 # TODO:
 #  Shift-Click rev range -> revision range X:Y
@@ -42,7 +66,7 @@ _common = (
      _('Changeset is closed.')),
     ('date(interval)',
      _('Changesets within the interval, see <a href="https://www.mercurial-scm.org/'
-       'mercurial/hg.1.html#dates">help dates</a>')),
+       'doc/hg.1.html#dates">help dates</a>')),
     ('ancestor(single, single)',
      _('Greatest common ancestor of the two changesets.')),
     ('matching(revset [, ''field(s) to match''])',
@@ -53,7 +77,7 @@ _common = (
 _filepatterns = (
     ('file(pattern)',
      _('Changesets affecting files matched by pattern.  '
-       'See <a href="https://www.mercurial-scm.org/mercurial/hg.1.html#patterns">'
+       'See <a href="https://www.mercurial-scm.org/doc/hg.1.html#patterns">'
        'help patterns</a>')),
     ('modifies(pattern)',
      _('Changesets which modify files matched by pattern.')),
@@ -120,7 +144,6 @@ class RevisionSetQuery(QDialog):
         self.setWindowFlags(Qt.Window)
 
         layout = QVBoxLayout()
-        layout.setMargin(0)
         layout.setContentsMargins(*(4,)*4)
         self.setLayout(layout)
 
@@ -207,7 +230,7 @@ class RevisionSetQuery(QDialog):
         self.entry.returnPressed.connect(self.returnPressed)
         layout.addWidget(self.entry, 0)
 
-        txt = _('<a href="https://www.mercurial-scm.org/mercurial/hg.1.html#revsets">'
+        txt = _('<a href="https://www.mercurial-scm.org/doc/hg.1.html#revsets">'
                 'help revsets</a>')
         helpLabel = QLabel(txt)
         helpLabel.setOpenExternalLinks(True)

@@ -7,16 +7,42 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QDir,
+    QTimer,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
-from mercurial import cmdutil, commands, hg
+from mercurial import (
+    cmdutil,
+    commands,
+    hg,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+)
 
 def _startrev_available():
     entry = cmdutil.findcmd('clone', commands.table)[1]
@@ -213,7 +239,7 @@ class CloneWidget(cmdui.AbstractCmdWidget):
             # addItems() can overwrite temporary edit text
             edittext = combo.currentText()
             combo.blockSignals(True)
-            combo.addItems(qs.value(key).toStringList())
+            combo.addItems(qtlib.readStringList(qs, key))
             combo.setCurrentIndex(combo.findText(edittext))
             combo.setEditText(edittext)
             combo.blockSignals(False)

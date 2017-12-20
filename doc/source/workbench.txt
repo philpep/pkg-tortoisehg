@@ -226,7 +226,7 @@ Filter Toolbar
 
 The filter bar allows one to quickly filter the changesets panel. It is based
 on the Revision Sets feature of Mercurial.
-See `hg.1.html#revsets <https://www.mercurial-scm.org/mercurial/hg.1.html#revsets>`_
+See `hg.1.html#revsets <https://www.mercurial-scm.org/doc/hg.1.html#revsets>`_
 for details on how to specify revision sets.
 The toolbar can be toggled with :kbd:`Ctrl-S`. Parts from left to right:
 

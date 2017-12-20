@@ -77,7 +77,7 @@ Adding Tools
 If you have a visual diff tool installed that is not supported by
 TortoiseHg, you can create a tool configuration for it in your user
 :file:`Mercurial.ini` file.  See Mercurial's
-`documentation <https://www.mercurial-scm.org/mercurial/hgrc.5.html#merge-tools>`_
+`documentation <https://www.mercurial-scm.org/doc/hgrc.5.html#merge-tools>`_
 on how to configure your tool for use in file merges.  When that is
 complete, you can add the extra keys used by TortoiseHg for visual
 diff::
@@ -128,7 +128,7 @@ required.
 
 In order to support file extension based tool selection, TortoiseHg has
 added support for a **[diff-patterns]** section equivalent to Mercurial's
-`merge-patterns <https://www.mercurial-scm.org/mercurial/hgrc.5.html#merge-patterns>`_
+`merge-patterns <https://www.mercurial-scm.org/doc/hgrc.5.html#merge-patterns>`_
 section.
 
 .. vim: noet ts=4

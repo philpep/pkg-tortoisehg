@@ -5,13 +5,23 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
-from tortoisehg.util.i18n import _
-from tortoisehg.util import hglib
+from .qtgui import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QGridLayout,
+    QKeySequence,
+    QLabel,
+    QRadioButton,
+    QShortcut,
+    QVBoxLayout,
+)
 
-from tortoisehg.hgqt import qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import qtlib
 
 class BranchOpDialog(QDialog):
     'Dialog for manipulating wctx.branch()'

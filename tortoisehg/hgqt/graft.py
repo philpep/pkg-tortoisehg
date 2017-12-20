@@ -5,15 +5,37 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
 import os
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, cmdcore, cmdui, resolve, thgrepo, wctxcleaner
-from tortoisehg.hgqt import csinfo, cslist
+from .qtcore import (
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QGroupBox,
+    QMessageBox,
+    QVBoxLayout,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    csinfo,
+    cslist,
+    qtlib,
+    resolve,
+    thgrepo,
+    wctxcleaner,
+)
 
 BB = QDialogButtonBox
 
@@ -136,9 +158,9 @@ class GraftDialog(QDialog):
         for n, w in self._optchks.iteritems():
             if n == 'autoresolve':
                 w.setChecked(ui.configbool('tortoisehg', n,
-                                           qs.value(n, True).toBool()))
+                                           qtlib.readBool(qs, n, True)))
             else:
-                w.setChecked(qs.value(n).toBool())
+                w.setChecked(qtlib.readBool(qs, n))
         qs.endGroup()
 
     def _writeSettings(self):

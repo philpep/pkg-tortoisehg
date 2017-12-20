@@ -6,14 +6,36 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
+
+from .qtcore import (
+    QSettings,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QGroupBox,
+    QLabel,
+    QListView,
+    QListWidget,
+    QListWidgetItem,
+    QShortcut,
+    QTextEdit,
+    QVBoxLayout,
+)
 
 from hgext import mq
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qscilib, qtlib, messageentry
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    messageentry,
+    qscilib,
+    qtlib,
+)
 
 class QFoldDialog(QDialog):
 
@@ -139,7 +161,7 @@ class QFoldDialog(QDialog):
 
     def _readsettings(self):
         s = QSettings()
-        self.restoreGeometry(s.value('qfold/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'qfold/geom'))
 
     def _writesettings(self):
         s = QSettings()

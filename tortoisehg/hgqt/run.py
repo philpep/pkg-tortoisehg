@@ -19,7 +19,7 @@ import sys
 import subprocess
 
 from mercurial import util, fancyopts, cmdutil, extensions, error, scmutil
-from mercurial import pathutil
+from mercurial import pathutil, registrar
 
 from tortoisehg.util.i18n import agettext as _
 from tortoisehg.util import hglib, paths, i18n
@@ -47,7 +47,7 @@ def dispatch(args, u=None):
             pdb.set_trace()
         return _runcatch(u, args)
     except error.ParseError, e:
-        qtapp.earlyExceptionMsgBox(e)
+        qtapp.earlyExceptionMsgBox(hglib.tounicode(str(e)))
     except SystemExit, e:
         return e.code
     except Exception, e:
@@ -391,7 +391,7 @@ def _runcommand(ui, options, cmd, cmdfunc):
 qtrun = qtapp.QtRunner()
 
 table = {}
-command = hglib.command(table)
+command = registrar.command(table)
 
 # common command options
 

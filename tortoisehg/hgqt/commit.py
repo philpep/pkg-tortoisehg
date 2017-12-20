@@ -5,28 +5,83 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
+import cgi
 import os
 import re
 import tempfile
 import time
 
-from mercurial import util, error, phases
-from mercurial import obsolete  # delete if obsolete becomes enabled by default
+from .qsci import (
+    QsciAPIs,
+)
+from .qtcore import (
+    QSettings,
+    QSize,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QActionGroup,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFont,
+    QFrame,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QShortcut,
+    QSizePolicy,
+    QStyle,
+    QStyleFactory,
+    QStyleOptionToolButton,
+    QSplitter,
+    QToolBar,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.util import hglib, i18n, shlib, wconfig
-from tortoisehg.util.i18n import _
+from mercurial import (
+    error,
+    obsolete,  # delete if obsolete becomes enabled by default
+    phases,
+    util,
+)
 
-from tortoisehg.hgqt.messageentry import MessageEntry
-from tortoisehg.hgqt import cmdcore, cmdui, thgrepo
-from tortoisehg.hgqt import qtlib, qscilib, status, branchop, revpanel
-from tortoisehg.hgqt import hgrcutil, lfprompt
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qsci import QsciAPIs
+from ..util import (
+    hglib,
+    i18n,
+    shlib,
+    wconfig,
+)
+from ..util.i18n import _
+from . import (
+    branchop,
+    cmdcore,
+    cmdui,
+    hgrcutil,
+    lfprompt,
+    qscilib,
+    qtlib,
+    revpanel,
+    status,
+    thgrepo,
+)
+from .messageentry import MessageEntry
 
 if os.name == 'nt':
-    from tortoisehg.util import bugtraq
+    from ..util import bugtraq
     _hasbugtraq = True
 else:
     _hasbugtraq = False
@@ -175,12 +230,10 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         self.setLayout(layout)
 
         vbox = QVBoxLayout()
-        vbox.setMargin(0)
         vbox.setSpacing(0)
         vbox.setContentsMargins(*(0,)*4)
 
         hbox = QHBoxLayout()
-        hbox.setMargin(0)
         hbox.setContentsMargins(*(0,)*4)
         tbar = QToolBar(_("Commit Dialog Toolbar"), self)
         tbar.setStyleSheet(qtlib.tbstylesheet)
@@ -701,7 +754,7 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         opts = commitopts2str(self.opts)
         self.optionslabelfmt = _('<b>Selected Options:</b> %s')
         self.optionslabel.setText(self.optionslabelfmt
-                                  % Qt.escape(hglib.tounicode(opts)))
+                                  % cgi.escape(hglib.tounicode(opts)))
         self.optionslabel.setVisible(bool(opts))
 
         # Update parent csinfo widget
@@ -787,7 +840,7 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                         QMessageBox.Ok | QMessageBox.Cancel)
             if d != QMessageBox.Ok:
                 return
-        message = action.data().toString()
+        message = action.data()
         self.setMessage(message)
         self.msgte.setFocus()
 
@@ -807,13 +860,13 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         lpref = prefix + '/commit/' # local settings (splitter, etc)
         gpref = 'commit/'           # global settings (history, etc)
         # message history is stored in unicode
-        self.split.restoreState(s.value(lpref+'split').toByteArray())
+        self.split.restoreState(qtlib.readByteArray(s, lpref + 'split'))
         self.msgte.loadSettings(s, lpref+'msgte')
         self.stwidget.loadSettings(s, lpref+'status')
-        self.msghistory = list(s.value(gpref+'history-'+repoid).toStringList())
+        self.msghistory = qtlib.readStringList(s, gpref + 'history-' + repoid)
         self.msghistory = [unicode(m) for m in self.msghistory if m]
         self.updateRecentMessages()
-        self.userhist = map(unicode, s.value(gpref+'userhist').toStringList())
+        self.userhist = qtlib.readStringList(s, gpref + 'userhist')
         self.userhist = [u for u in self.userhist if u]
         try:
             curmsg = self.repo.vfs('cur-message.txt').read()
@@ -1405,7 +1458,7 @@ class CommitDialog(QDialog):
         self.opts = opts
 
         layout = QVBoxLayout()
-        layout.setMargin(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
         toplayout = QVBoxLayout()
@@ -1439,7 +1492,7 @@ class CommitDialog(QDialog):
                                               parent=self)
 
         s = QSettings()
-        self.restoreGeometry(s.value('commit/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'commit/geom'))
         commit.loadSettings(s, 'committool')
         repoagent.repositoryChanged.connect(self.updateUndo)
         commit.commitComplete.connect(self.postcommit)

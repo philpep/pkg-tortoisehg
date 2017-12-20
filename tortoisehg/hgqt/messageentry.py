@@ -5,14 +5,30 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qsci import QsciScintilla, QsciLexerMakefile
-
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, qscilib
+from __future__ import absolute_import
 
 import re
+
+from .qsci import (
+    QsciScintilla,
+    QsciLexerMakefile,
+)
+from .qtcore import (
+    QPoint,
+    QSettings,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QColor,
+    QFontMetrics,
+)
+
+from ..util.i18n import _
+from . import (
+    qscilib,
+    qtlib,
+)
 
 class MessageEntry(qscilib.Scintilla):
 
@@ -53,7 +69,7 @@ class MessageEntry(qscilib.Scintilla):
     def applylexer(self):
         font = qtlib.getfont('fontcomment').font()
         self.fontHeight = QFontMetrics(font).height()
-        if QSettings().value('msgentry/lexer', True).toBool():
+        if qtlib.readBool(QSettings(), 'msgentry/lexer', True):
             self.setLexer(QsciLexerMakefile(self))
             self.lexer().setColor(QColor(Qt.red), QsciLexerMakefile.Error)
             self.lexer().setFont(font)

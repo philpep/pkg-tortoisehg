@@ -5,16 +5,42 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+from __future__ import absolute_import
+
 import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QModelIndex,
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QDialog,
+    QFileDialog,
+    QKeySequence,
+    QLabel,
+    QToolBar,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+)
 
-from mercurial import extensions, util
+from mercurial import (
+    extensions,
+    util,
+)
 
-from tortoisehg.util.i18n import _
-from tortoisehg.util import hglib
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+)
 
 _FILE_FILTER = ';;'.join([
     _('Word docs (*.doc *.docx)'),
@@ -83,8 +109,9 @@ class LockDialog(QDialog):
         self.showMessage.connect(self._stbar.showMessage)
 
         s = QSettings()
-        self.restoreGeometry(s.value('lock/geom').toByteArray())
-        self.locktw.header().restoreState(s.value('lock/treestate').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'lock/geom'))
+        self.locktw.header().restoreState(
+            qtlib.readByteArray(s, 'lock/treestate'))
 
         QTimer.singleShot(0, self.finishSetup)
 
@@ -141,7 +168,7 @@ class LockDialog(QDialog):
 
     @pyqtSlot()
     def lockany(self):
-        wfile = QFileDialog.getOpenFileName(
+        wfile, _filter = QFileDialog.getOpenFileName(
             self, _('Open a (nonmergable) file you wish to be locked'),
             self.repo.root, _FILE_FILTER)
 

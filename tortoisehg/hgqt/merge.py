@@ -6,13 +6,44 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, csinfo, cmdcore, cmdui, status, resolve
-from tortoisehg.hgqt import qscilib, thgrepo, messageentry, commit, wctxcleaner
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QSettings,
+    QSize,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QCheckBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QVBoxLayout,
+    QWizard,
+    QWizardPage,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    csinfo,
+    cmdcore,
+    cmdui,
+    commit,
+    messageentry,
+    qscilib,
+    qtlib,
+    resolve,
+    status,
+    thgrepo,
+    wctxcleaner,
+)
 
 MARGINS = (8, 0, 0, 0)
 
@@ -56,7 +87,7 @@ class MergeDialog(QWizard):
         repo = self._repoagent.rawRepo()
         n = 'autoresolve'
         self.setField(n, repo.ui.configbool('tortoisehg', n,
-                                            qs.value(n, True).toBool()))
+                                            qtlib.readBool(qs, n, True)))
         qs.endGroup()
 
     def _writeSettings(self):
@@ -235,11 +266,11 @@ class SummaryPage(BasePage):
 
     def isComplete(self):
         'should Next button be sensitive?'
-        return self._wctxcleaner.isClean() or self.field('force').toBool()
+        return self._wctxcleaner.isClean() or self.field('force')
 
     def validatePage(self):
         'validate that we can continue with the merge'
-        if self.field('discard').toBool():
+        if self.field('discard'):
             labels = [(QMessageBox.Yes, _('&Discard')),
                       (QMessageBox.No, _('Cancel'))]
             if not qtlib.QuestionMsgBox(_('Confirm Discard Changes'),
@@ -332,7 +363,7 @@ class MergePage(BasePage):
             self.completeChanged.emit()
             return
 
-        discard = self.field('discard').toBool()
+        discard = self.field('discard')
         rev = hglib.tounicode(self._otherrev)
         cfgs = []
         extrakwargs = {}
@@ -340,13 +371,13 @@ class MergePage(BasePage):
             extrakwargs['tool'] = ':local'
             # disable changed/deleted prompt because we'll revert changes
             cfgs.append('ui.interactive=False')
-        elif self.field('autoresolve').toBool():
+        elif self.field('autoresolve'):
             cfgs.append('ui.merge=:merge')
         else:
             extrakwargs['tool'] = ':fail'
 
         cmdlines = [hglib.buildcmdargs('merge', rev, verbose=True,
-                                       force=self.field('force').toBool(),
+                                       force=self.field('force'),
                                        config=cfgs, **extrakwargs)]
         if discard:
             # revert files added/removed at other side
@@ -370,7 +401,7 @@ class MergePage(BasePage):
             if status == 'r':
                 rcount += 1
         if ucount:
-            if self.field('autoresolve').toBool():
+            if self.field('autoresolve'):
                 # if autoresolve is enabled, we know these were real conflicts
                 self.reslabel.setText(_('%d files have <b>merge conflicts</b> '
                                         'that must be <a href="resolve">'
@@ -398,7 +429,7 @@ class MergePage(BasePage):
         sess = self._cmdsession
         if ret in (0, 1):
             self.mergecomplete = True
-            if self.field('autoadvance').toBool() and not sess.warningString():
+            if self.field('autoadvance') and not sess.warningString():
                 self.tryAutoAdvance(True)
             self.completeChanged.emit()
 
@@ -407,7 +438,7 @@ class MergePage(BasePage):
         if cmd == 'resolve':
             dlg = resolve.ResolveDialog(self._repoagent, self)
             dlg.exec_()
-            if self.field('autoadvance').toBool():
+            if self.field('autoadvance'):
                 self.tryAutoAdvance(True)
             self.completeChanged.emit()
 
@@ -563,7 +594,7 @@ class CommitPage(BasePage):
 
         if len(self.repo[None].parents()) == 1:
             # commit succeeded, repositoryChanged() called wizard().next()
-            if self.field('skiplast').toBool():
+            if self.field('skiplast'):
                 self.wizard().close()
             return True
 
@@ -612,7 +643,7 @@ class CommitPage(BasePage):
     def readUserHistory(self):
         'Load user history from the global commit settings'
         s = QSettings()
-        userhist = s.value('commit/userhist').toStringList()
+        userhist = qtlib.readStringList(s, 'commit/userhist')
         userhist = [u for u in userhist if u]
         return userhist
 

@@ -17,11 +17,12 @@ import os
 import sys
 
 from mercurial.i18n import _
-from mercurial import cmdutil, commands, ui
+from mercurial import registrar, ui
+
+testedwith = '4.3'
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
-testedwith = '3.1'
+command = registrar.command(cmdtable)
 
 if hasattr(sys, "frozen"):
     if sys.frozen == 'windows_exe':
@@ -53,10 +54,26 @@ else:
 import threading
 
 from mercurial import demandimport
-demandimport.ignore.append('win32com.shell')
-demandimport.ignore.append('tortoisehg.util.config')
-demandimport.ignore.append('icons_rc')
-demandimport.ignore.append('translations_rc')
+demandimport.ignore.extend([
+    'win32com.shell',
+    'numpy',  # comtypes.npsupport does try-import
+    'tortoisehg.util.config',
+    'tortoisehg.hgqt.icons_rc',
+    'tortoisehg.hgqt.translations_rc',
+    # don't create troublesome demandmods for bunch of Q* attributes
+    'tortoisehg.hgqt.qsci',
+    'tortoisehg.hgqt.qtcore',
+    'tortoisehg.hgqt.qtgui',
+    'tortoisehg.hgqt.qtnetwork',
+    # TODO: fix name resolution in demandimporter and remove these
+    'qsci',
+    'qtcore',
+    'qtgui',
+    'qtnetwork',
+    # pygments seems to have trouble on loading plugins (see #4271, #4298)
+    'pkgutil',
+    'pkg_resources',
+])
 demandimport.enable()
 
 # Verify we can reach TortoiseHg sources first
@@ -77,7 +94,6 @@ def enforceversion():
     from tortoisehg.util.hgversion import hgversion, checkhgversion
     errmsg = checkhgversion(hgversion)
     if errmsg:
-        from mercurial import ui
         from tortoisehg.hgqt.bugreport import run
         from tortoisehg.hgqt.run import qtrun
         opts = {}

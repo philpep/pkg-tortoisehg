@@ -5,21 +5,60 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import os
-import difflib
+from __future__ import absolute_import
+
 import cPickle as pickle
+import difflib
+import os
 import re
+
+from . import qsci as Qsci
+from .qtcore import (
+    QEvent,
+    QObject,
+    QPoint,
+    QSettings,
+    QTime,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QActionGroup,
+    QApplication,
+    QColor,
+    QFontMetrics,
+    QFrame,
+    QInputDialog,
+    QKeySequence,
+    QLabel,
+    QPalette,
+    QShortcut,
+    QStyle,
+    QToolBar,
+    QHBoxLayout,
+    QVBoxLayout,
+)
 
 from mercurial import util
 
-from tortoisehg.util import hglib, colormap
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qscilib, qtlib, blockmatcher, cmdcore, lexers
-from tortoisehg.hgqt import visdiff, filedata, fileencoding
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4 import Qsci
+from ..util import (
+    colormap,
+    hglib,
+)
+from ..util.i18n import _
+from . import (
+    blockmatcher,
+    cmdcore,
+    filedata,
+    fileencoding,
+    lexers,
+    qscilib,
+    qtlib,
+    visdiff,
+)
 
 qsci = qscilib.Scintilla
 
@@ -258,8 +297,8 @@ class HgFileView(QFrame):
     def loadSettings(self, qs, prefix):
         self.sci.loadSettings(qs, prefix)
         self._actionAutoTextEncoding.setChecked(
-            qs.value(prefix + '/autotextencoding', True).toBool())
-        enc = str(qs.value(prefix + '/textencoding').toString())
+            qtlib.readBool(qs, prefix + '/autotextencoding', True))
+        enc = qtlib.readString(qs, prefix + '/textencoding')
         if enc:
             try:
                 # prefer repository-specific encoding if specified
@@ -304,14 +343,14 @@ class HgFileView(QFrame):
     @pyqtSlot(QAction)
     def _setModeByAction(self, action):
         'One of the mode toolbar buttons has been toggled'
-        mode = action.data().toInt()[0]
+        mode = action.data()
         self._lostMode = _NullMode
         self._changeEffectiveMode(mode)
         self._displayLoaded(self._fd)
 
     def _effectiveMode(self):
         a = self._modeToggleGroup.checkedAction()
-        return a.data().toInt()[0]
+        return a.data()
 
     def _changeEffectiveMode(self, mode):
         self._modeActionMap[mode].setChecked(True)
@@ -340,7 +379,7 @@ class HgFileView(QFrame):
         curmode = self._effectiveMode()
         if curmode and self._modeActionMap[curmode].isEnabled():
             return
-        fallbackmode = iter(a.data().toInt()[0]
+        fallbackmode = iter(a.data()
                             for a in self._modeToggleGroup.actions()
                             if a.isEnabled()).next()
         if not self._lostMode:
@@ -908,7 +947,7 @@ class _MessageViewControl(_AbstractViewControl):
     def _requestForceDisplay(self):
         self._sci.setText(_('Please wait while the file is opened ...'))
         # Wait a little to ensure that the "wait message" is displayed
-        QTimer.singleShot(10, self, SIGNAL('forceDisplayRequested()'))
+        QTimer.singleShot(10, self.forceDisplayRequested)
 
 
 class _AnnotateViewControl(_AbstractViewControl):
@@ -971,7 +1010,7 @@ class _AnnotateViewControl(_AbstractViewControl):
         s = QSettings()
         wb = "Annotate/"
         for a in self._annoptactions:
-            a.setChecked(s.value(wb + a.data().toString()).toBool())
+            a.setChecked(qtlib.readBool(s, wb + a.data()))
         if not any(a.isChecked() for a in self._annoptactions):
             self._annoptactions[-1].setChecked(True)  # 'rev' by default
 
@@ -979,7 +1018,7 @@ class _AnnotateViewControl(_AbstractViewControl):
         s = QSettings()
         wb = "Annotate/"
         for a in self._annoptactions:
-            s.setValue(wb + a.data().toString(), a.isChecked())
+            s.setValue(wb + a.data(), a.isChecked())
 
     def _initAnnotateOptionActions(self):
         self._annoptactions = []
@@ -1018,7 +1057,7 @@ class _AnnotateViewControl(_AbstractViewControl):
             def getrev(fctx):
                 return revfmt % fctx.rev()
 
-        aformat = [str(a.data().toString()) for a in self._annoptactions
+        aformat = [str(a.data()) for a in self._annoptactions
                    if a.isChecked()]
         annfields = {
             'rev': getrev,
@@ -1073,14 +1112,9 @@ class _AnnotateViewControl(_AbstractViewControl):
             return
         repo = self._repoAgentForFile().rawRepo()
         data = pickle.loads(str(sess.readAll()))
-        try:
-            data = data[0]['lines']
-        except (IndexError, KeyError):
-            # hg<4.3 (7a209737f01c)
-            pass
         links = []
         fctxcache = {}  # (path, rev): fctx
-        for l in data:
+        for l in data[0]['lines']:
             path, rev = l['file'], l['rev']
             try:
                 fctx = fctxcache[path, rev]
@@ -1107,7 +1141,8 @@ class _AnnotateViewControl(_AbstractViewControl):
         self._sci.SendScintilla(qsci.SCI_STYLESETBACK,
                                 s.style(), s.paper())
         self._sci.SendScintilla(qsci.SCI_STYLESETFONT,
-                                s.style(), s.font().family().toAscii().data())
+                                s.style(),
+                                unicode(s.font().family()).encode('latin-1'))
         self._sci.SendScintilla(qsci.SCI_STYLESETSIZE,
                                 s.style(), s.font().pointSize())
         for i, (fctx, _origline) in enumerate(self._links):
@@ -1282,7 +1317,7 @@ class _ChunkSelectionViewControl(_AbstractViewControl):
 
         self._actmarkexcluded = a = QAction(_('&Mark Excluded Changes'), self)
         a.setCheckable(True)
-        a.setChecked(QSettings().value('changes-mark-excluded').toBool())
+        a.setChecked(qtlib.readBool(QSettings(), 'changes-mark-excluded'))
         a.triggered.connect(self._updateChunkIndicatorMarks)
         self._excludeindicator = -1
         self._updateChunkIndicatorMarks(a.isChecked())

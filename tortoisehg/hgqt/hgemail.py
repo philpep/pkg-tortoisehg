@@ -7,14 +7,39 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import os, tempfile, re
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from mercurial import error, util
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, lexers, qtlib
-from tortoisehg.hgqt.hgemail_ui import Ui_EmailDialog
+from __future__ import absolute_import
+
+import os
+import re
+import tempfile
+
+from .qtcore import (
+    QAbstractTableModel,
+    QModelIndex,
+    QSettings,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QDialog,
+    QKeySequence,
+    QShortcut,
+)
+
+from mercurial import (
+    error,
+    util,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    lexers,
+    qtlib,
+)
+from .hgemail_ui import Ui_EmailDialog
 
 class EmailDialog(QDialog):
     """Dialog for sending patches via email"""
@@ -60,9 +85,9 @@ class EmailDialog(QDialog):
 
     def _readsettings(self):
         s = QSettings()
-        self.restoreGeometry(s.value('email/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'email/geom'))
         self._qui.intro_changesets_splitter.restoreState(
-            s.value('email/intro_changesets_splitter').toByteArray())
+            qtlib.readByteArray(s, 'email/intro_changesets_splitter'))
 
     def _writesettings(self):
         s = QSettings()
@@ -74,11 +99,11 @@ class EmailDialog(QDialog):
         s = QSettings()
         for k in ('to', 'cc', 'from', 'flag', 'subject'):
             w = getattr(self._qui, '%s_edit' % k)
-            w.addItems(s.value('email/%s_history' % k).toStringList())
+            w.addItems(qtlib.readStringList(s, 'email/%s_history' % k))
             w.setCurrentIndex(-1)  # unselect
         for k in ('body', 'attach', 'inline', 'diffstat'):
             w = getattr(self._qui, '%s_check' % k)
-            w.setChecked(s.value('email/%s' % k).toBool())
+            w.setChecked(qtlib.readBool(s, 'email/%s' % k))
 
     def _writehistory(self):
         def itercombo(w):
@@ -248,7 +273,7 @@ class EmailDialog(QDialog):
         if self._introrequired():
             self._qui.writeintro_check.setChecked(True)
 
-    @qtlib.senderSafeSlot()
+    @pyqtSlot()
     def _updateattachmodes(self):
         """Update checkboxes to select the embedding style of the patch"""
         attachmodes = [self._qui.attach_check, self._qui.inline_check]
@@ -378,16 +403,16 @@ class _ChangesetsModel(QAbstractTableModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return None
 
         rev = self._revs[index.row()]
         if index.column() == 0 and role == Qt.CheckStateRole:
             return rev in self._selectedrevs and Qt.Checked or Qt.Unchecked
         if role == Qt.DisplayRole:
             coldata = self._COLUMNS[index.column()][1]
-            return QVariant(hglib.tounicode(coldata(self._repo.changectx(rev))))
+            return hglib.tounicode(coldata(self._repo.changectx(rev)))
 
-        return QVariant()
+        return None
 
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid() or self._readonly:
@@ -430,9 +455,9 @@ class _ChangesetsModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role):
         if role != Qt.DisplayRole or orientation != Qt.Horizontal:
-            return QVariant()
+            return None
 
-        return QVariant(self._COLUMNS[section][0].capitalize())
+        return self._COLUMNS[section][0].capitalize()
 
     def selectAll(self):
         self._selectedrevs = set(self._revs)

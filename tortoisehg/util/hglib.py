@@ -55,13 +55,6 @@ _extensions_blacklist = (
     'zeroconf',
 )
 
-try:
-    command = registrar.command
-except AttributeError:
-    # hg<4.3 (d47d7d3bd07b)
-    from mercurial import cmdutil
-    command = cmdutil.command
-
 tokenizerevspec = revsetlang.tokenize
 userrcpath = rcutil.userrcpath
 
@@ -311,26 +304,7 @@ def _wrapextensionsloader():
 def loadextensions(ui):
     """Load and setup extensions for GUI process"""
     _wrapextensionsloader()  # enable blacklist of extensions
-    loadedbefore = set(name for name, module in extensions.extensions())
     extensions.loadall(ui)
-
-    # we still generate diffs and commit descriptions in GUI process, which
-    # may require template functions loaded from extensions; so run loaders
-    # of template* tables just like dispatch._dispatch(). (issue #4515)
-    try:
-        extraloaders = dispatchmod.extraloaders
-    except AttributeError:
-        return
-    # hg<4.3 (45b0e9d05ee9)
-    for name, module in extensions.extensions():
-        if name in loadedbefore:
-            continue
-        for objname, loadermod, loadername in extraloaders:
-            if not objname.startswith('template'):
-                continue
-            extraobj = getattr(module, objname, None)
-            if extraobj is not None:
-                getattr(loadermod, loadername)(ui, name, extraobj)
 
 # TODO: provide singular canonpath() wrapper instead?
 def canonpaths(list):
@@ -686,7 +660,6 @@ def configuredusername(ui):
     # may fall back to the system default.
     if (not os.environ.get('HGUSER')
         and not ui.config('ui', 'username')
-        and not ui.config('ui', 'user')  # hg<4.3 (e714159860fd)
         and not os.environ.get('EMAIL')):
         return None
     try:
@@ -837,10 +810,9 @@ def escapeascii(s):
     r"""Escape string to be embedded as a literal; like Python string_escape,
     but keeps 8bit characters and can process unicode
 
-    >>> from PyQt4.QtCore import QString
     >>> escapeascii("\0 \x0b \x7f \t \n \r ' \\")
     "\\x00 \\x0b \\x7f \\t \\n \\r \\' \\\\"
-    >>> escapeascii(QString(u'\xc0\n'))
+    >>> escapeascii(u'\xc0\n')
     u'\xc0\\n'
     """
     s = _stringify(s)
@@ -850,10 +822,9 @@ def escapepath(path):
     r"""Convert path to command-line-safe string; path must be relative to
     the repository root
 
-    >>> from PyQt4.QtCore import QString
     >>> escapepath('foo/[bar].txt')
     'path:foo/[bar].txt'
-    >>> escapepath(QString(u'\xc0'))
+    >>> escapepath(u'\xc0')
     u'\xc0'
     """
     p = _stringify(path)
@@ -1032,15 +1003,12 @@ def buildcmdargs(name, *args, **opts):
 
     type conversion to string:
 
-    >>> from PyQt4.QtCore import QString
     >>> buildcmdargs('email', r=[0, 1])
     ['email', '-r', '0', '-r', '1']
     >>> buildcmdargs('grep', 'foo', rev=2)
     ['grep', '--rev', '2', 'foo']
     >>> buildcmdargs('tag', u'\xc0', message=u'\xc1')
     ['tag', '--message', u'\xc1', u'\xc0']
-    >>> buildcmdargs(QString('tag'), QString(u'\xc0'), message=QString(u'\xc1'))
-    [u'tag', '--message', u'\xc1', u'\xc0']
     """
     fullargs = [_stringify(name)]
     for k, v in opts.iteritems():

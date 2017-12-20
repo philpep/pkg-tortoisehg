@@ -21,14 +21,28 @@ Also, enable the plugin with the following in mercurial.ini::
     rupdate = /path/to/rupdate
 """
 
+from __future__ import absolute_import
+
+from .qtcore import (
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QSizePolicy,
+    QVBoxLayout,
+)
+
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdui, csinfo, qtlib
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdui,
+    csinfo,
+    qtlib,
+)
 
 class RemoteUpdateWidget(cmdui.AbstractCmdWidget):
 
@@ -108,8 +122,8 @@ class RemoteUpdateWidget(cmdui.AbstractCmdWidget):
         self.update_info()
 
     def readSettings(self, qs):
-        self.push_chk.setChecked(qs.value('push').toBool())
-        self.newbranch_chk.setChecked(qs.value('newbranch').toBool())
+        self.push_chk.setChecked(qtlib.readBool(qs, 'push'))
+        self.newbranch_chk.setChecked(qtlib.readBool(qs, 'newbranch'))
 
         self.optexpander.set_expanded(self.push_chk.isChecked()
                                       or self.newbranch_chk.isChecked()

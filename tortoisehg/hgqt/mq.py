@@ -5,17 +5,60 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import os, re
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import os
+import re
+
+from .qtcore import (
+    QAbstractListModel,
+    QByteArray,
+    QMimeData,
+    QModelIndex,
+    QObject,
+    QPoint,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QAction,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QDockWidget,
+    QFont,
+    QFrame,
+    QHBoxLayout,
+    QInputDialog,
+    QListView,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QToolBar,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, qtlib, cmdui
-from tortoisehg.hgqt import commit, qdelete, qfold, qrename, rejects
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    commit,
+    qtlib,
+    qdelete,
+    qfold,
+    qrename,
+    rejects,
+)
 
 def _checkForRejects(repo, rawoutput, parent=None):
     """Parse output of qpush/qpop to resolve hunk failure manually"""
@@ -576,7 +619,9 @@ class MQPatchesWidget(QDockWidget):
         self._qdeleteAct = a = QAction(
             qtlib.geticon('hg-qdelete'), _('&Delete Patches...'), self)
         a.setToolTip(_('Delete selected patches'))
-        self._qrenameAct = QAction(_('Re&name Patch...'), self)
+        self._qrenameAct = a = QAction(_('Re&name Patch...'), self)
+        a.setShortcut('F2')
+        a.setShortcutContext(Qt.WidgetWithChildrenShortcut)
         self._setGuardsAct = a = QAction(
             qtlib.geticon('hg-qguard'), _('Set &Guards...'), self)
         a.setToolTip(_('Configure guards for selected patch'))
@@ -592,6 +637,7 @@ class MQPatchesWidget(QDockWidget):
         tbar.addAction(self._qfinishAct)
         tbar.addAction(self._qdeleteAct)
         tbar.addSeparator()
+        self.addAction(self._qrenameAct)
         tbar.addAction(self._setGuardsAct)
 
         self._queueFrame = w = QFrame()
@@ -640,9 +686,9 @@ class MQPatchesWidget(QDockWidget):
 
         self._queueListWidget.activated.connect(self._onGotoPatch)
 
-        self._qpushAct.triggered[()].connect(self._patchActions.pushPatch)
+        self._qpushAct.triggered.connect(self._patchActions.pushPatch)
         self._qpushAllAct.triggered.connect(self._patchActions.pushAllPatches)
-        self._qpopAct.triggered[()].connect(self._patchActions.popPatch)
+        self._qpopAct.triggered.connect(self._patchActions.popPatch)
         self._qpopAllAct.triggered.connect(self._patchActions.popAllPatches)
         self._qgotoAct.triggered.connect(self._onGotoPatch)
         self._qfinishAct.triggered.connect(self._onFinishRevision)
@@ -877,7 +923,7 @@ class OptionsDialog(QDialog):
         self.bb = bb
         layout.addWidget(bb)
 
-    @qtlib.senderSafeSlot()
+    @pyqtSlot()
     def _resolveopts(self):
         # cannot use both --force and --keep-changes
         exclmap = {self.forcecb: [self.keepcb],

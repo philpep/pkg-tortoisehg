@@ -5,13 +5,28 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-from PyQt4.QtCore import pyqtSlot
-from PyQt4.QtCore import QTimer
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
-from tortoisehg.hgqt import cmdcore, cmdui, cslist, qtlib
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
+from .qtcore import (
+    QTimer,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QSizePolicy,
+    QVBoxLayout,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    cslist,
+    qtlib,
+)
 
 class PruneWidget(cmdui.AbstractCmdWidget):
 
@@ -31,6 +46,15 @@ class PruneWidget(cmdui.AbstractCmdWidget):
         w.activated.connect(self._updateRevset)
         w.lineEdit().textEdited.connect(self._onRevsetEdited)
         form.addRow(_('Target:'), w)
+
+        optbox = QVBoxLayout()
+        form.addRow('', optbox)
+        self._optchks = {}
+        for name, text in [
+                ('keep', _('Do not modify working copy (-k/--keep)')),
+        ]:
+            self._optchks[name] = w = QCheckBox(text, self)
+            optbox.addWidget(w)
 
         repo = repoagent.rawRepo()
         self._cslist = w = cslist.ChangesetList(repo, self)
@@ -92,7 +116,9 @@ class PruneWidget(cmdui.AbstractCmdWidget):
                 and not self._querylater.isActive())
 
     def runCommand(self):
-        cmdline = hglib.buildcmdargs('prune', rev=self.revset())
+        opts = {}
+        opts.update((n, w.isChecked()) for n, w in self._optchks.iteritems())
+        cmdline = hglib.buildcmdargs('prune', rev=self.revset(), **opts)
         return self._repoagent.runCommand(cmdline, self)
 
 

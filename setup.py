@@ -205,6 +205,7 @@ class build_config(Command):
                                    ('build_lib', 'build_lib'))
 
     def _generate_config(self, cfgfile):
+        from tortoisehg.hgqt import qtcore
         # dirty hack to get the install root
         installcmd = self.get_finalized_command('install')
         rootlen = len(installcmd.root or '')
@@ -217,6 +218,7 @@ class build_config(Command):
             'icon_path': os.path.join(sharedir, 'pixmaps', 'tortoisehg',
                                       'icons'),
             'nofork': True,
+            'qt_api': qtcore._detectapi(),
             }
         # Distributions will need to supply their own
         f = open(cfgfile, "w")
@@ -236,6 +238,7 @@ class build_py2app_config(build_config):
     description = 'create config module for standalone OS X bundle'
 
     def _generate_config(self, cfgfile):
+        from tortoisehg.hgqt import qtcore
         # Since py2app seems to ignore the build dir in favor of the src tree,
         # ignore the given path and generate it in the source tree.  The file
         # is conditionalized such that it won't interfere when run from source.
@@ -245,6 +248,7 @@ class build_py2app_config(build_config):
             'license_path': 'COPYING.txt',
             'locale_path': 'locale',
             'icon_path': 'icons',
+            'qt_api': qtcore._detectapi(),
         }
         rsrc_dir = 'os.environ["RESOURCEPATH"]'
 
@@ -274,10 +278,16 @@ class build_ui(Command):
         self.set_undefined_options('build', ('force', 'force'))
 
     def _compile_ui(self, ui_file, py_file):
-        from PyQt4 import uic
+        uic = self._impuic()
         fp = open(py_file, 'w')
         uic.compileUi(ui_file, fp)
         fp.close()
+
+    @staticmethod
+    def _impuic():
+        from tortoisehg.hgqt.qtcore import QT_API
+        mod = __import__(QT_API, globals(), locals(), ['uic'])
+        return mod.uic
 
     _wrappeduic = False
     @classmethod
@@ -286,7 +296,10 @@ class build_ui(Command):
         if cls._wrappeduic:
             return
 
-        from PyQt4.uic.Compiler import compiler, qtproxies, indenter
+        uic = cls._impuic()
+        compiler = uic.Compiler.compiler
+        qtproxies = uic.Compiler.qtproxies
+        indenter = uic.Compiler.indenter
 
         class _UICompiler(compiler.UICompiler):
             def createToplevelWidget(self, classname, widgetname):
@@ -334,11 +347,15 @@ class build_qrc(Command):
                                    ('force', 'force'))
 
     def _findrcc(self):
-        rcc = 'pyrcc4'
-        if os.name != 'nt':
+        from tortoisehg.hgqt.qtcore import QT_API
+        try:
+            rcc = {'PyQt4': 'pyrcc4', 'PyQt5': 'pyrcc5'}[QT_API]
+        except KeyError:
+            raise RuntimeError('unsupported Qt API: %s' % QT_API)
+        if os.name != 'nt' or QT_API == 'PyQt5':
             return rcc
-        import PyQt4
-        return os.path.join(os.path.dirname(PyQt4.__file__), rcc)
+        mod = __import__(QT_API, globals(), locals())
+        return os.path.join(os.path.dirname(mod.__file__), rcc)
 
     def _generate_qrc(self, qrc_file, srcfiles, prefix):
         basedir = os.path.dirname(qrc_file)
@@ -381,14 +398,25 @@ class build_qrc(Command):
 
     def _build_translations(self, basepath):
         """Build translations_rc.py which inclues qt_xx.qm"""
-        if os.name == 'nt':
-            import PyQt4
-            trpath = os.path.join(
-                os.path.dirname(PyQt4.__file__), 'translations')
+        from tortoisehg.hgqt.qtcore import QT_API
+        if QT_API == 'PyQt4':
+            if os.name == 'nt':
+                import PyQt4
+                trpath = os.path.join(
+                    os.path.dirname(PyQt4.__file__), 'translations')
+            else:
+                from PyQt4.QtCore import QLibraryInfo
+                trpath = unicode(
+                    QLibraryInfo.location(QLibraryInfo.TranslationsPath))
         else:
-            from PyQt4.QtCore import QLibraryInfo
-            trpath = unicode(
-                QLibraryInfo.location(QLibraryInfo.TranslationsPath))
+            if os.name == 'nt':
+                import PyQt5
+                trpath = os.path.join(
+                    os.path.dirname(PyQt5.__file__), 'translations')
+            else:
+                from PyQt5.QtCore import QLibraryInfo
+                trpath = unicode(
+                    QLibraryInfo.location(QLibraryInfo.TranslationsPath))
         builddir = os.path.join(self.get_finalized_command('build').build_base,
                                 'qt-translations')
         self.mkpath(builddir)
@@ -538,7 +566,22 @@ def setup_windows(version):
         import PyQt4
         pluginsdir = os.path.join(os.path.dirname(PyQt4.__file__), 'plugins')
         return (subdir, [os.path.join(pluginsdir, subdir, e) for e in dlls])
-    _data_files.append(qt4_plugins('imageformats', 'qico4.dll', 'qsvg4.dll'))
+
+    def qt5_plugins(subdir, *dlls):
+        import PyQt5
+        pluginsdir = os.path.join(os.path.dirname(PyQt5.__file__), 'plugins')
+        return (subdir, [os.path.join(pluginsdir, subdir, e) for e in dlls])
+
+    from tortoisehg.hgqt.qtcore import QT_API
+    if QT_API == 'PyQt4':
+        _data_files.append(qt4_plugins('imageformats',
+                                       'qico4.dll', 'qsvg4.dll'))
+    else:
+        _data_files.append(qt5_plugins('platforms', 'qwindows.dll'))
+        _data_files.append(qt5_plugins('imageformats',
+                                       'qico.dll', 'qsvg.dll', 'qjpeg.dll',
+                                       'qgif.dll', 'qicns.dll', 'qtga.dll',
+                                       'qtiff.dll', 'qwbmp.dll', 'qwebp.dll'))
 
     # Manually include other modules py2exe can't find by itself.
     if 'hgext.highlight' in hgextmods:
@@ -612,7 +655,17 @@ def setup_osx(version):
         return ('qt_plugins/' + subdir,
                 [os.path.join(pluginsdir, subdir, e) for e in libs])
 
-    _data_files.append(qt4_plugins('imageformats', 'libqsvg.dylib'))
+    def qt5_plugins(subdir, *dlls):
+        import PyQt5
+        pluginsdir = os.path.join(os.path.dirname(PyQt5.__file__), 'plugins')
+        return (subdir, [os.path.join(pluginsdir, subdir, e) for e in dlls])
+
+    from tortoisehg.hgqt.qtcore import QT_API
+    if QT_API == 'PyQt4':
+        _data_files.append(qt4_plugins('imageformats', 'libqsvg.dylib'))
+    else:
+        _data_files.append(qt5_plugins('platforms', 'libqcocoa.dylib'))
+        _data_files.append(qt5_plugins('imageformats', 'libqsvg.dylib'))
 
     _py2app_options = {
         'arch': 'x86_64',

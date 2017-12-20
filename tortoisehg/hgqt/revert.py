@@ -5,14 +5,30 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
+
+from .qtcore import (
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QLabel,
+    QVBoxLayout,
+)
 
 from mercurial.node import nullid
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+)
 
 class RevertDialog(QDialog):
     def __init__(self, repoagent, wfiles, rev, parent):
@@ -80,7 +96,7 @@ class RevertDialog(QDialog):
         self.layout().addWidget(self.revcombo)
 
     def accept(self):
-        rev = self.revcombo.itemData(self.revcombo.currentIndex()).toString()
+        rev = self.revcombo.itemData(self.revcombo.currentIndex())
         if self.allchk.isChecked():
             if not qtlib.QuestionMsgBox(_('Confirm Revert'),
                      _('Reverting all files will discard changes and '

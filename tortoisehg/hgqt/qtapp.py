@@ -6,34 +6,77 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import gc, os, platform, signal, sys, traceback
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import QApplication, QFont
-from PyQt4.QtNetwork import QLocalServer, QLocalSocket
+import gc
+import os
+import platform
+import signal
+import sys
+import traceback
+
+from .qtcore import (
+    PYQT_VERSION,
+    PYQT_VERSION_STR,
+    QByteArray,
+    QIODevice,
+    QLibraryInfo,
+    QObject,
+    QSettings,
+    QSignalMapper,
+    QSocketNotifier,
+    QT_API,
+    QT_VERSION,
+    QT_VERSION_STR,
+    QTimer,
+    QTranslator,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QApplication,
+    QFont,
+)
+from .qtnetwork import (
+    QLocalServer,
+    QLocalSocket,
+)
+
+from mercurial import (
+    error,
+    util,
+)
+
+from ..util import (
+    hglib,
+    i18n,
+    version as thgversion,
+)
+from ..util.i18n import _
+from . import (
+    bugreport,
+    qtlib,
+    thgrepo,
+    workbench,
+)
 
 if os.name == 'nt' and getattr(sys, 'frozen', False):
     # load QtSvg4.dll and QtXml4.dll by .pyd, so that imageformats/qsvg4.dll
-    # can find them without relying on unreliable PATH variable
-    from PyQt4 import QtSvg, QtXml
-    QtSvg.__name__, QtXml.__name__  # no demandimport, silence pyflakes
+    # can find them without relying on unreliable PATH variable. The filenames
+    # change for PyQt5 but the basic problem remains the same.
+    _mod = __import__(QT_API, globals(), locals(), ['QtSvg', 'QtXml'])
+    _mod.QtSvg.__name__, _mod.QtXml.__name__  # no demandimport
 
-if PYQT_VERSION < 0x40600 or QT_VERSION < 0x40600:
-    sys.stderr.write('TortoiseHg requires at least Qt 4.6 and PyQt 4.6\n')
+if PYQT_VERSION < 0x40705 or QT_VERSION < 0x40600:
+    sys.stderr.write('TortoiseHg requires at least Qt 4.6 and PyQt 4.7.5\n')
     sys.stderr.write('You have Qt %s and PyQt %s\n' %
                      (QT_VERSION_STR, PYQT_VERSION_STR))
     sys.exit(-1)
 
-from mercurial import error, util
-
-from tortoisehg.util.i18n import _
-from tortoisehg.util import hglib, i18n
-from tortoisehg.util import version as thgversion
-from tortoisehg.hgqt import bugreport, qtlib, thgrepo, workbench
-
 if getattr(sys, 'frozen', False) and os.name == 'nt':
     # load icons and translations
-    import icons_rc, translations_rc
+    from . import icons_rc, translations_rc
 
 try:
     from thginithook import thginithook

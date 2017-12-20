@@ -5,13 +5,31 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import os, signal, struct, sys, time
+from __future__ import absolute_import
 
-from PyQt4.QtCore import QBuffer, QIODevice, QObject, QProcess, QTimer
-from PyQt4.QtCore import pyqtSignal, pyqtSlot
+import os
+import signal
+import struct
+import sys
+import time
 
-from tortoisehg.util import hglib, paths, pipeui
-from tortoisehg.util.i18n import _
+from .qtcore import (
+    QBuffer,
+    QIODevice,
+    QObject,
+    QProcess,
+    QProcessEnvironment,
+    QTimer,
+    pyqtSignal,
+    pyqtSlot,
+)
+
+from ..util import (
+    hglib,
+    paths,
+    pipeui,
+)
+from ..util.i18n import _
 
 class ProgressMessage(tuple):
     __slots__ = ()
@@ -141,18 +159,22 @@ else:
         os.kill(int(proc.pid()), signal.SIGINT)
 
 def _fixprocenv(proc):
-    env = os.environ.copy()
+    env = QProcessEnvironment.systemEnvironment()
     # disable flags and extensions that might break our output parsing
     # (e.g. "defaults" arguments, "PAGER" of "email --test")
-    env['HGPLAINEXCEPT'] = 'alias,i18n,revsetalias'
-    if not getattr(sys, 'frozen', False):
+    env.insert('HGPLAINEXCEPT', 'alias,i18n,revsetalias')
+    # since sys.path may contain the script directory which the hg process
+    # wouldn't see, we have to filter it out
+    libpaths = set(sys.path)
+    libpaths.discard(os.path.dirname(os.path.realpath(sys.argv[0])))
+    thgroot = paths.get_prog_root()
+    if not getattr(sys, 'frozen', False) and thgroot not in libpaths:
         # make sure hg process can look up our modules
-        old_python_path = env.get('PYTHONPATH')
-        env['PYTHONPATH'] = paths.get_prog_root()
-        if old_python_path:
-            env['PYTHONPATH'] += os.pathsep + old_python_path
-    # not using setProcessEnvironment() for compatibility with PyQt 4.6
-    proc.setEnvironment([hglib.tounicode('%s=%s' % p) for p in env.iteritems()])
+        pypath = hglib.tounicode(thgroot)
+        if env.contains('PYTHONPATH'):
+            pypath += os.pathsep + unicode(env.value('PYTHONPATH'))
+        env.insert('PYTHONPATH', pypath)
+    proc.setProcessEnvironment(env)
 
 def _proccmdline(ui, exts):
     configs = [(section, name, value)

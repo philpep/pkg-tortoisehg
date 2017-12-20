@@ -5,14 +5,41 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import re
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QPoint,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLayout,
+    QListWidget,
+    QLineEdit,
+    QMenu,
+    QSizePolicy,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    qtlib,
+)
 
 class BookmarkDialog(QDialog):
 
@@ -265,7 +292,6 @@ class SyncBookmarkDialog(QDialog):
         outgoingFrame = QFrame(self.splitter)
         outgoingLayout = QVBoxLayout()
         outgoingLayout.setSpacing(2)
-        outgoingLayout.setMargin(2)
         outgoingLayout.setContentsMargins(2, 2, 2, 2)
         outgoingFrame.setLayout(outgoingLayout)
         outgoingLabel = QLabel(_('Outgoing Bookmarks'))
@@ -288,7 +314,6 @@ class SyncBookmarkDialog(QDialog):
         self.addActions(self._outactions)
         outgoingBtnLayout = QHBoxLayout()
         outgoingBtnLayout.setSpacing(2)
-        outgoingBtnLayout.setMargin(2)
         outgoingBtnLayout.setContentsMargins(2, 2, 2, 2)
         for a in self._outactions:
             outgoingBtnLayout.addWidget(qtlib.ActionPushButton(a, self))
@@ -298,7 +323,6 @@ class SyncBookmarkDialog(QDialog):
         incomingFrame = QFrame(self.splitter)
         incomingLayout = QVBoxLayout()
         incomingLayout.setSpacing(2)
-        incomingLayout.setMargin(2)
         incomingLayout.setContentsMargins(2, 2, 2, 2)
         incomingFrame.setLayout(incomingLayout)
         incomingLabel = QLabel(_('Incoming Bookmarks'))
@@ -321,7 +345,6 @@ class SyncBookmarkDialog(QDialog):
         self.addActions(self._inactions)
         incomingBtnLayout = QHBoxLayout()
         incomingBtnLayout.setSpacing(2)
-        incomingBtnLayout.setMargin(2)
         incomingBtnLayout.setContentsMargins(2, 2, 2, 2)
         for a in self._inactions:
             incomingBtnLayout.addWidget(qtlib.ActionPushButton(a, self))

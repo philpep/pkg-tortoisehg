@@ -5,16 +5,66 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 
-from mercurial import hg, util, error, context, scmutil
+from .qtcore import (
+    QAbstractTableModel,
+    QItemSelectionModel,
+    QMimeData,
+    QModelIndex,
+    QObject,
+    QPoint,
+    QSettings,
+    QSize,
+    QThread,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QAction,
+    QCheckBox,
+    QColor,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QPushButton,
+    QShortcut,
+    QSizePolicy,
+    QSplitter,
+    QToolBar,
+    QToolButton,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, cmdui, filectxactions, filedata, fileview
+from mercurial import (
+    context,
+    error,
+    hg,
+    scmutil,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdui,
+    filectxactions,
+    filedata,
+    fileview,
+    qtlib,
+)
 
 # This widget can be used as the basis of the commit tool or any other
 # working copy browser.
@@ -84,12 +134,12 @@ class StatusWidget(QWidget):
         split = QSplitter(Qt.Horizontal)
         split.setChildrenCollapsible(False)
         layout = QVBoxLayout()
-        layout.setMargin(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(split)
         self.setLayout(layout)
 
         vbox = QVBoxLayout()
-        vbox.setMargin(0)
+        vbox.setContentsMargins(0, 0, 0, 0)
         frame = QFrame(split)
         sp = SP(SP.Expanding, SP.Expanding)
         sp.setHorizontalStretch(0)
@@ -97,7 +147,6 @@ class StatusWidget(QWidget):
         frame.setSizePolicy(sp)
         frame.setLayout(vbox)
         hbox = QHBoxLayout()
-        hbox.setMargin(4)
         hbox.setContentsMargins(0, 0, 0, 0)
         self.refreshBtn = tb = QToolButton()
         tb.setToolTip(_('Refresh file list'))
@@ -246,7 +295,7 @@ class StatusWidget(QWidget):
 
     def loadSettings(self, qs, prefix):
         self.fileview.loadSettings(qs, prefix+'/fileview')
-        self.split.restoreState(qs.value(prefix+'/state').toByteArray())
+        self.split.restoreState(qtlib.readByteArray(qs, prefix + '/state'))
 
     def saveSettings(self, qs, prefix):
         self.fileview.saveSettings(qs, prefix+'/fileview')
@@ -796,7 +845,7 @@ class WctxModel(QAbstractTableModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return None
 
         if index.column() == COL_PATH:
             if role == Qt.CheckStateRole and self.checkable:
@@ -814,11 +863,11 @@ class WctxModel(QAbstractTableModel):
                 else:
                     return Qt.Unchecked
             elif role == Qt.DisplayRole:
-                return QVariant("")
+                return ""
             elif role == Qt.ToolTipRole:
-                return QVariant(_('Checked count: %d') % self.checkCount)
+                return _('Checked count: %d') % self.checkCount
         elif role == Qt.DisplayRole:
-            return QVariant(self.rows[index.row()][index.column()])
+            return self.rows[index.row()][index.column()]
         elif role == Qt.TextColorRole:
             path, status, mst, upath, ext, sz = self.rows[index.row()]
             if mst:
@@ -827,15 +876,15 @@ class WctxModel(QAbstractTableModel):
                 return _colors.get(status, QColor('black'))
         elif role == Qt.ToolTipRole:
             path, status, mst, upath, ext, sz = self.rows[index.row()]
-            return QVariant(statusMessage(status, mst, upath))
+            return statusMessage(status, mst, upath)
         '''
         elif role == Qt.DecorationRole and index.column() == COL_STATUS:
             if status in statusTypes:
                 ico = QIcon()
                 ico.addPixmap(QPixmap('icons/' + statusTypes[status].icon))
-                return QVariant(ico)
+                return ico
         '''
-        return QVariant()
+        return None
 
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid():
@@ -858,9 +907,9 @@ class WctxModel(QAbstractTableModel):
 
     def headerData(self, col, orientation, role):
         if role != Qt.DisplayRole or orientation != Qt.Horizontal:
-            return QVariant()
+            return None
         else:
-            return QVariant(self.headers[col])
+            return self.headers[col]
 
     def flags(self, index):
         flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled
@@ -920,6 +969,7 @@ class WctxModel(QAbstractTableModel):
 
     def sort(self, col, order):
         self.layoutAboutToBeChanged.emit()
+        self.beginResetModel()
 
         def getStatusRank(value):
             """Helper function used to sort items according to their hg status
@@ -987,15 +1037,16 @@ class WctxModel(QAbstractTableModel):
         if order == Qt.DescendingOrder:
             self.rows.reverse()
         self.layoutChanged.emit()
-        self.reset()
+        self.endResetModel()
 
     def setFilter(self, match):
         'simple match in filename filter'
         self.layoutAboutToBeChanged.emit()
+        self.beginResetModel()
         self.rows = [r for r in self.unfiltered
                      if unicode(match) in r[COL_PATH_DISPLAY]]
         self.layoutChanged.emit()
-        self.reset()
+        self.endResetModel()
 
     def getChecked(self):
         assert len(self.checked) == len(self.unfiltered)
@@ -1146,7 +1197,7 @@ class StatusDialog(QDialog):
     def loadSettings(self):
         s = QSettings()
         self.stwidget.loadSettings(s, 'status')
-        self.restoreGeometry(s.value('status/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'status/geom'))
 
     def saveSettings(self):
         s = QSettings()

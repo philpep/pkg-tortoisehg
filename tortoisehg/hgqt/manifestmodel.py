@@ -8,16 +8,39 @@
 # Foundation; either version 2 of the License, or (at your option) any later
 # version.
 
-import os, re
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import os
+import re
 
-from mercurial import error, subrepo
-from mercurial import match as matchmod
+from .qtcore import (
+    QAbstractItemModel,
+    QMimeData,
+    QModelIndex,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCompleter,
+    QFileIconProvider,
+    QIcon,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.hgqt import filedata, qtlib, status, visdiff
+from mercurial import (
+    error,
+    match as matchmod,
+    subrepo,
+)
+
+from ..util import hglib
+from . import (
+    filedata,
+    qtlib,
+    status,
+    visdiff,
+)
 
 _subrepoType2IcoMap = {
     'hg': 'hg',
@@ -655,12 +678,12 @@ class ManifestCompleter(QCompleter):
     def splitPath(self, path):
         """
         >>> c = ManifestCompleter()
-        >>> c.splitPath(QString('foo/bar'))
+        >>> c.splitPath(u'foo/bar')
         [u'foo', u'bar']
 
         trailing slash appends extra '', so that QCompleter can descend to
         next level:
-        >>> c.splitPath(QString('foo/'))
+        >>> c.splitPath(u'foo/')
         [u'foo', u'']
         """
         return unicode(path).split('/')

@@ -5,14 +5,37 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
-from mercurial import util, error
+from .qtcore import (
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractButton,
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib
+from mercurial import (
+    error,
+    util,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+)
 
 class BisectDialog(QDialog):
 
@@ -149,7 +172,7 @@ class BisectDialog(QDialog):
 
     @pyqtSlot()
     def _verifyGood(self):
-        self.goodrev = self._lookupRevision(self._gle.text().simplified())
+        self.goodrev = self._lookupRevision(unicode(self._gle.text()).strip())
         if self.goodrev is None:
             return
         self._gb.setEnabled(False)
@@ -160,7 +183,7 @@ class BisectDialog(QDialog):
 
     @pyqtSlot()
     def _verifyBad(self):
-        self.badrev = self._lookupRevision(self._ble.text().simplified())
+        self.badrev = self._lookupRevision(unicode(self._ble.text()).strip())
         if self.badrev is None:
             return
         self._ble.setEnabled(False)

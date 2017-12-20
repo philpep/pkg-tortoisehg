@@ -5,18 +5,39 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
-import stat
 import shutil
+import stat
 
-from mercurial import hg, scmutil
+from .qtcore import (
+    QSettings,
+    QThread,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QVBoxLayout,
+    qApp,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _, ngettext
-from tortoisehg.hgqt import qtlib, cmdui
+from mercurial import (
+    hg,
+    scmutil,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _, ngettext
+from . import (
+    cmdui,
+    qtlib,
+)
 
 class PurgeDialog(QDialog):
 
@@ -31,12 +52,12 @@ class PurgeDialog(QDialog):
         self._repoagent = repoagent
 
         layout = QVBoxLayout()
-        layout.setMargin(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         self.setLayout(layout)
 
         toplayout = QVBoxLayout()
-        toplayout.setMargin(10)
+        toplayout.setContentsMargins(10, 10, 10, 10)
         toplayout.setSpacing(5)
         layout.addLayout(toplayout)
 
@@ -86,7 +107,7 @@ class PurgeDialog(QDialog):
         s = QSettings()
         desktopgeom = qApp.desktop().availableGeometry()
         self.resize(desktopgeom.size() * 0.25)
-        self.restoreGeometry(s.value('purge/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'purge/geom'))
 
         self.th = None
         QTimer.singleShot(0, self.checkStatus)

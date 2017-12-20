@@ -7,14 +7,32 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
+from .qtcore import (
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QLabel,
+    QMessageBox,
+    QSizePolicy,
+    QVBoxLayout,
+)
+
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, csinfo, qtlib, resolve
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    csinfo,
+    qtlib,
+    resolve,
+)
 
 class UpdateWidget(cmdui.AbstractCmdWidget):
 
@@ -39,7 +57,7 @@ class UpdateWidget(cmdui.AbstractCmdWidget):
 
         # always include integer revision
         try:
-            assert not isinstance(rev, (unicode, QString))
+            assert not isinstance(rev, unicode)
             ctx = self.repo[rev]
             if isinstance(ctx.rev(), int):  # could be None or patch name
                 combo.addItem(str(ctx.rev()))
@@ -131,11 +149,11 @@ class UpdateWidget(cmdui.AbstractCmdWidget):
             self.rev_combo.lineEdit().selectAll()
 
     def readSettings(self, qs):
-        self.merge_chk.setChecked(qs.value('merge').toBool())
+        self.merge_chk.setChecked(qtlib.readBool(qs, 'merge'))
         self.autoresolve_chk.setChecked(
             self.repo.ui.configbool('tortoisehg', 'autoresolve',
-                                    qs.value('autoresolve', True).toBool()))
-        self.verbose_chk.setChecked(qs.value('verbose').toBool())
+                                    qtlib.readBool(qs, 'autoresolve', True)))
+        self.verbose_chk.setChecked(qtlib.readBool(qs, 'verbose'))
 
         # expand options if a hidden one is checked
         self.optexpander.set_expanded(self.hiddenSettingIsChecked())
@@ -267,8 +285,7 @@ class UpdateWidget(cmdui.AbstractCmdWidget):
             # revisions from the selected path. The only way to do so is
             # to temporarily set the default path to the selected path URL
             pullpath = hglib.fromunicode(
-                self.path_combo.itemData(
-                    self.path_combo.currentIndex()).toString())
+                self.path_combo.itemData(self.path_combo.currentIndex()))
             cmdline.append('--config')
             cmdline.append('paths.default=%s' % pullpath)
 
@@ -368,7 +385,7 @@ class UpdateWidget(cmdui.AbstractCmdWidget):
 
     @pyqtSlot(int)
     def _updatePathComboTooltip(self, idx):
-        self.path_combo.setToolTip(self.path_combo.itemData(idx).toString())
+        self.path_combo.setToolTip(self.path_combo.itemData(idx))
 
 
 class UpdateDialog(cmdui.CmdControlDialog):

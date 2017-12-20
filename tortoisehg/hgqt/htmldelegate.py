@@ -5,8 +5,20 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
+
+from .qtcore import (
+    QPointF,
+    QSize,
+)
+from .qtgui import (
+    QAbstractTextDocumentLayout,
+    QPalette,
+    QStyle,
+    QStyleOptionViewItemV4,
+    QStyledItemDelegate,
+    QTextDocument,
+)
 
 class HTMLDelegate(QStyledItemDelegate):
 
@@ -42,5 +54,5 @@ class HTMLDelegate(QStyledItemDelegate):
 
     def _builddoc(self, option, index):
         doc = QTextDocument(defaultFont=option.font)
-        doc.setHtml(index.data().toString())
+        doc.setHtml(index.data())
         return doc

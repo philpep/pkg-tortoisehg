@@ -13,20 +13,20 @@ import socket
 
 from mercurial import (
     extensions,
+    registrar,
     sslutil,
     util,
 )
 
 from tortoisehg.util import (
-    hglib,
     hgversion,
 )
 from tortoisehg.util.i18n import agettext as _
 
 cmdtable = {}
 _mqcmdtable = {}
-command = hglib.command(cmdtable)
-mqcommand = hglib.command(_mqcmdtable)
+command = registrar.command(cmdtable)
+mqcommand = registrar.command(_mqcmdtable)
 testedwith = hgversion.testedwith
 
 @command('debuggethostfingerprint',

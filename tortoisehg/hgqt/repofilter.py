@@ -6,16 +6,46 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
 
-from mercurial import error, util
-from mercurial import repoview
+from .qtcore import (
+    QEvent,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QCompleter,
+    QFontMetrics,
+    QIcon,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMenu,
+    QSizePolicy,
+    QStyle,
+    QToolBar,
+    QToolButton,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import revset, qtlib
+from mercurial import (
+    error,
+    repoview,
+    util,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    qtlib,
+    revset,
+)
 
 _permanent_queries = ('head()', 'merge()',
                       'tagged()', 'bookmark()',
@@ -115,7 +145,7 @@ class RepoFilterBar(QToolBar):
         self.filterEnabled = True
 
         #Check if the font contains the glyph needed by the branch combo
-        if not QFontMetrics(self.font()).inFont(QString(u'\u2605').at(0)):
+        if not QFontMetrics(self.font()).inFont(u'\u2605'):
             self._allBranchesLabel = u'*** %s ***' % _('Show all')
 
         self.entrydlg = revset.RevisionSetQuery(repoagent, self)
@@ -124,6 +154,7 @@ class RepoFilterBar(QToolBar):
 
         self.revsetcombo = combo = QComboBox()
         combo.setEditable(True)
+        combo.setInsertPolicy(QComboBox.NoInsert)
         # don't calculate size hint from history contents, just use as much
         # space as possible. this way, the branch combo can be enlarged up
         # to its preferred width.
@@ -266,6 +297,9 @@ class RepoFilterBar(QToolBar):
         else:
             return query
 
+    def _isUnsavedQuery(self):
+        return unicode(self.revsetcombo.currentText()).startswith(' ')
+
     @pyqtSlot()
     def _updateQueryType(self):
         query = unicode(self.revsetcombo.currentText()).strip()
@@ -279,6 +313,8 @@ class RepoFilterBar(QToolBar):
             'keyword': (_('Keyword Search'), '#cccccc', '#eeeeee'),
             'revset':  (_('Revision Set'),   '#f6dd82', '#fcf1ca'),
             }[qtype]
+        if self._isUnsavedQuery():
+            name += ' ' + _('(unsaved)')
         label = self._revsettypelabel
         label.setText(name)
         label.setStyleSheet('border: 1px solid %s; background-color: %s; '
@@ -315,6 +351,8 @@ class RepoFilterBar(QToolBar):
 
     def saveQuery(self):
         query = self.revsetcombo.currentText()
+        if self._isUnsavedQuery():
+            return
         if query in self.revsethist:
             self.revsethist.remove(query)
         if query not in self._permanent_queries:
@@ -328,16 +366,17 @@ class RepoFilterBar(QToolBar):
     def loadSettings(self, s):
         repoid = hglib.shortrepoid(self._repo)
         s.beginGroup('revset/' + repoid)
-        self.entrydlg.restoreGeometry(s.value('geom').toByteArray())
-        self.revsethist = list(s.value('queries').toStringList())
-        self.filtercb.setChecked(s.value('filter', True).toBool())
+        self.entrydlg.restoreGeometry(qtlib.readByteArray(s, 'geom'))
+        self.revsethist = list(qtlib.readStringList(s, 'queries'))
+        self.filtercb.setChecked(qtlib.readBool(s, 'filter', True))
         full = self.revsethist + self._permanent_queries
         self.revsetcombo.clear()
         self.revsetcombo.addItems(full)
         self.revsetcombo.setCurrentIndex(-1)
-        self.setVisible(s.value('showrepofilterbar').toBool())
-        self.showHiddenBtn.setChecked(s.value('showhidden').toBool())
-        self.showGraftSourceBtn.setChecked(s.value('showgraftsource', True).toBool())
+        self.setVisible(qtlib.readBool(s, 'showrepofilterbar'))
+        self.showHiddenBtn.setChecked(qtlib.readBool(s, 'showhidden'))
+        self.showGraftSourceBtn.setChecked(
+            qtlib.readBool(s, 'showgraftsource', True))
         self._loadBranchFilterSettings(s)
         s.endGroup()
 
@@ -390,14 +429,14 @@ class RepoFilterBar(QToolBar):
         self.addWidget(self._branchCombo)
 
     def _loadBranchFilterSettings(self, s):
-        branch = unicode(s.value('branch').toString())
+        branch = qtlib.readString(s, 'branch')
         if branch == '.':
             branch = hglib.tounicode(self._repo.dirstate.branch())
         self._branchCombo.blockSignals(True)
         self.setBranch(branch)
         self._branchCombo.blockSignals(False)
 
-        self._allparAction.setChecked(s.value('branch_allparents').toBool())
+        self._allparAction.setChecked(qtlib.readBool(s, 'branch_allparents'))
 
     def _saveBranchFilterSettings(self, s):
         branch = self.branch()
@@ -453,7 +492,7 @@ class RepoFilterBar(QToolBar):
     def branch(self):
         """Return the current branch name [unicode]"""
         index = self._branchCombo.currentIndex()
-        branch = self._branchCombo.itemData(index).toString()
+        branch = self._branchCombo.itemData(index)
         return unicode(branch)
 
     def branchAncestorsIncluded(self):

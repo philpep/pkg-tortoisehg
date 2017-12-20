@@ -5,17 +5,40 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+from __future__ import absolute_import
+
 import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qsci import QsciScintilla
+from .qsci import (
+    QsciScintilla,
+)
+from .qtcore import (
+    QIODevice,
+    QProcess,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QColor,
+    QDockWidget,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
-from mercurial import commands, util
+from mercurial import (
+    commands,
+    util,
+)
 
-from tortoisehg.hgqt import cmdui, qtlib
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdui,
+    qtlib,
+)
 
 class _LogWidgetForConsole(cmdui.LogWidget):
     """Wrapped LogWidget for ConsoleWidget"""

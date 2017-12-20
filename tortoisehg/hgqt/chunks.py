@@ -5,21 +5,61 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import cStringIO
-import os, re
+import os
+import re
 
-from mercurial import util, patch, commands
-from mercurial import match as matchmod
+from . import qsci as Qsci
+from .qtcore import (
+    QPoint,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QColor,
+    QDialog,
+    QFontMetrics,
+    QFrame,
+    QHBoxLayout,
+    QKeySequence,
+    QLabel,
+    QMenu,
+    QPainter,
+    QSplitter,
+    QStyle,
+    QToolBar,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.patchctx import patchctx
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, qscilib, lexers, visdiff, revert, rejects
-from tortoisehg.hgqt import filelistview, filedata, blockmatcher, manifestmodel
+from mercurial import (
+    commands,
+    match as matchmod,
+    patch,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4 import Qsci
+from ..util import hglib
+from ..util.patchctx import patchctx
+from ..util.i18n import _
+from . import (
+    blockmatcher,
+    filedata,
+    filelistview,
+    lexers,
+    manifestmodel,
+    qscilib,
+    qtlib,
+    rejects,
+    revert,
+    visdiff,
+)
 
 # TODO
 # Add support for tools like TortoiseMerge that help resolve rejected chunks
@@ -45,7 +85,6 @@ class ChunksWidget(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
-        layout.setMargin(0)
         layout.setContentsMargins(2, 2, 2, 2)
         self.setLayout(layout)
 
@@ -67,7 +106,7 @@ class ChunksWidget(QWidget):
         self.fileListFrame.setFrameShape(QFrame.NoFrame)
         vbox = QVBoxLayout()
         vbox.setSpacing(0)
-        vbox.setMargin(0)
+        vbox.setContentsMargins(0, 0, 0, 0)
         vbox.addWidget(self.filelist)
         self.fileListFrame.setLayout(vbox)
 
@@ -428,7 +467,7 @@ class ChunksWidget(QWidget):
 
     @pyqtSlot(str, str)
     def displayFile(self, file, status):
-        if isinstance(file, (unicode, QString)):
+        if isinstance(file, unicode):
             file = hglib.fromunicode(file)
             status = hglib.fromunicode(status)
         if file:

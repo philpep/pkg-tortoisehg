@@ -14,16 +14,40 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import binascii, os, re
+from __future__ import absolute_import
 
-from mercurial import util, error
+import binascii
+import os
+import re
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, filedata, graph, graphopt
+from .qtcore import (
+    QAbstractTableModel,
+    QByteArray,
+    QMimeData,
+    QModelIndex,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QApplication,
+    QColor,
+    QFont,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from mercurial import (
+    error,
+    util,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    filedata,
+    graph,
+    graphopt,
+)
 
 mqpatchmimetype = 'application/thg-mqunappliedpatch'
 
@@ -399,7 +423,7 @@ class HgRepoListModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         if parent.isValid():
             return 0
-        return len(ALLCOLUMNS) - 1  # no FileColumn
+        return len(self.allColumns())
 
     def maxWidthValueForColumn(self, column):
         if column == RevColumn:
@@ -418,7 +442,7 @@ class HgRepoListModel(QAbstractTableModel):
                 return sorted(self.repo.branchmap(), key=lambda x: len(x))[-1]
             except IndexError:
                 pass
-        if column == FileColumn:
+        if self._hasFileColumn() and column == FileColumn:
             return self._filename
         if column == ChangesColumn:
             return 'Changes'
@@ -454,7 +478,7 @@ class HgRepoListModel(QAbstractTableModel):
             return None
         gnode = self.graph[index.row()]
         if role == Qt.DisplayRole:
-            if index.column() == FileColumn:
+            if self._hasFileColumn() and index.column() == FileColumn:
                 return hglib.tounicode(gnode.extra[0])
         if role == Qt.FontRole:
             if index.column() in (NodeColumn, ConvertedColumn):
@@ -469,11 +493,6 @@ class HgRepoListModel(QAbstractTableModel):
                 return UNAPPLIED_PATCH_COLOR
         if role == GraphNodeRole:
             return gnode
-        if (PYQT_VERSION < 0x40701 and role == Qt.DecorationRole
-            and self._safedata(index, LabelsRole)):
-            # hack to flag HasDecoration where extended attributes of
-            # QStyleOptionViewItem are not accessible in initStyleOption()
-            return QColor(Qt.transparent)
         # repo may be changed while reading in case of postpull=rebase for
         # example, and result in RevlogError. (issue #429)
         try:
@@ -517,7 +536,7 @@ class HgRepoListModel(QAbstractTableModel):
             if textfunc is None:
                 return None
             text = textfunc(self, ctx)
-            if not isinstance(text, (QString, unicode)):
+            if not isinstance(text, unicode):
                 text = hglib.tounicode(text)
             return text
         elif role == Qt.ForegroundRole:
@@ -608,7 +627,7 @@ class HgRepoListModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return COLUMNHEADERS[section][1]
+            return self.allColumnHeaders()[section][1]
 
     def defaultIndex(self):
         """Index that should be selected when the model is initially loaded
@@ -803,6 +822,21 @@ class HgRepoListModel(QAbstractTableModel):
         except:
             return 'draft'
 
+    def _hasFileColumn(self):
+        return False # no FileColumn
+
+    def allColumns(self):
+        if self._hasFileColumn():
+            return ALLCOLUMNS
+        else:
+            return ALLCOLUMNS[:-1]
+
+    def allColumnHeaders(self):
+        if self._hasFileColumn():
+            return COLUMNHEADERS
+        else:
+            return COLUMNHEADERS[:-1]
+
     _columnmap = {
         RevColumn: _getrev,
         BranchColumn: _getbranch,
@@ -832,14 +866,12 @@ class FileRevModel(HgRepoListModel):
         self._filename = filename
         HgRepoListModel.__init__(self, repoagent, parent)
 
+    def _hasFileColumn(self):
+        return True
+
     def _createGraph(self):
         grapher = graph.filelog_grapher(self.repo, self._filename)
         return graph.Graph(self.repo, grapher)
-
-    def columnCount(self, parent=QModelIndex()):
-        if parent.isValid():
-            return 0
-        return len(ALLCOLUMNS)
 
     def indexLinkedFromRev(self, rev):
         """Index for the last changed revision before the specified revision

@@ -6,16 +6,36 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    pyqtSlot,
+)
+from .qtgui import (
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QRadioButton,
+    QSizePolicy,
+    QVBoxLayout,
+)
 
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+)
 
 WD_PARENT = _('= Working Directory Parent =')
 
@@ -188,8 +208,8 @@ class ArchiveWidget(cmdui.AbstractCmdWidget):
             ext = '*' + select['ext']
             filter = ';;'.join(['%s (%s)' % (select['label'], ext),
                                 _('All files (*)')])
-        response = FD.getSaveFileName(self, caption, dest, filter, None,
-                                      FD.ReadOnly)
+        response, _filter = FD.getSaveFileName(
+            self, caption, dest, filter, None, FD.ReadOnly)
         if response:
             self.dest_edit.setText(response)
             self.update_path()

@@ -6,17 +6,36 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+from __future__ import absolute_import
+
 import os
 
-from PyQt4.QtCore import Qt, SIGNAL, SLOT, pyqtSignal, pyqtSlot
-from PyQt4.QtCore import QObject, QPoint, QSignalMapper
-from PyQt4.QtGui import *
+from .qtcore import (
+    QPoint,
+    QSignalMapper,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QActionGroup,
+    QMenu,
+    QStackedLayout,
+    QTabBar,
+    QVBoxLayout,
+    QWidget,
+)
 
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, qtlib, repowidget
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    qtlib,
+    repowidget,
+)
 
 class _TabBar(QTabBar):
 
@@ -282,7 +301,7 @@ class RepoTabWidget(QWidget):
 
     @pyqtSlot(QAction)
     def _setCurrentTabByAction(self, action):
-        index, _ok = action.data().toInt()
+        index = action.data()
         self.setCurrentIndex(index)
 
     def currentRepoRootPath(self):
@@ -357,7 +376,7 @@ class RepoTabWidget(QWidget):
         return -1
 
     def _widget(self, index):
-        return self._tabbar.tabData(index).toPyObject()
+        return self._tabbar.tabData(index)
 
     def _createRepoWidget(self, root, bundle=None):
         try:
@@ -375,17 +394,14 @@ class RepoTabWidget(QWidget):
         rw.showMessageSignal.connect(self.showMessageSignal)
         rw.taskTabVisibilityChanged.connect(self.taskTabVisibilityChanged)
         rw.toolbarVisibilityChanged.connect(self.toolbarVisibilityChanged)
-        # PyQt 4.6 cannot find compatible signal by new-style connection
-        QObject.connect(rw, SIGNAL('busyIconChanged()'),
-                        self._iconmapper, SLOT('map()'))
+        rw.busyIconChanged.connect(self._iconmapper.map)
         self._iconmapper.setMapping(rw, rw)
-        QObject.connect(rw, SIGNAL('titleChanged(QString)'),
-                        self._titlemapper, SLOT('map()'))
+        rw.titleChanged.connect(self._titlemapper.map)
         self._titlemapper.setMapping(rw, rw)
         self._stack.addWidget(rw)
         return rw
 
-    @qtlib.senderSafeSlot(str, object, str, str, object)
+    @pyqtSlot(str, object, str, str, object)
     def _mapProgressReceived(self, topic, pos, item, unit, total):
         rw = self.sender()
         assert isinstance(rw, repowidget.RepoWidget)
@@ -409,12 +425,12 @@ class RepoTabWidget(QWidget):
                 # case, the user is going to commit changes to this repo.
                 rw.switchToNamedTaskTab('commit')
 
-    @pyqtSlot(QWidget)
+    @pyqtSlot('QWidget*')
     def _updateIcon(self, rw):
         index = self._indexOf(rw)
         self._tabbar.setTabIcon(index, rw.busyIcon())
 
-    @pyqtSlot(QWidget)
+    @pyqtSlot('QWidget*')
     def _updateTitle(self, rw):
         index = self._indexOf(rw)
         self._tabbar.setTabText(index, rw.title())

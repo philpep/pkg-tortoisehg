@@ -5,14 +5,32 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import QObject, QThread
-from PyQt4.QtCore import pyqtSignal, pyqtSlot
-from PyQt4.QtGui import QMessageBox, QWidget
+from __future__ import absolute_import
 
-from mercurial import cmdutil, hg, util
+from .qtcore import (
+    QObject,
+    QThread,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QMessageBox,
+    QWidget,
+)
 
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, cmdui, qtlib, thgrepo
+from mercurial import (
+    cmdutil,
+    hg,
+    util,
+)
+
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    qtlib,
+    thgrepo,
+)
 
 def _checkchanged(repo):
     try:

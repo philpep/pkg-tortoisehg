@@ -5,12 +5,37 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from tortoisehg.util import hglib, i18n
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, qtlib
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLayout,
+    QLineEdit,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ..util import (
+    hglib,
+    i18n,
+)
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    qtlib,
+)
 
 keep = i18n.keepgettext()
 

@@ -93,8 +93,7 @@ def _findeditor(repo, files):
             return (t, util.shellquote(toolpath))
 
     # fallback to potential CLI editor
-    editor = os.environ.get('HGEDITOR') or repo.ui.config('ui', 'editor') \
-             or os.environ.get('EDITOR', 'vi')
+    editor = ui.geteditor()
     return (None, editor)
 
 def detecteditor(repo, files):

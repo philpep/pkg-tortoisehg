@@ -16,14 +16,33 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import re
 
-from tortoisehg.hgqt import qtlib
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
+from .qtcore import (
+    QSettings,
+    Qt,
+)
+from .qtgui import (
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import qtlib
 
 DEFAULTICONNAME = 'tools-spanner-hammer'
 
@@ -51,7 +70,7 @@ class ToolsFrame(QFrame):
             toolTip=_('Select the toolbar or menu to change'))
 
         def selectlocation(index):
-            location = self.locationcombo.itemData(index).toString()
+            location = self.locationcombo.itemData(index)
             for widget in self.widgets:
                 if widget.location == location:
                     widget.removeInvalid(self.value())
@@ -118,7 +137,7 @@ class ToolsFrame(QFrame):
 
     def getCurrentToolList(self):
         index = self.locationcombo.currentIndex()
-        location = self.locationcombo.itemData(index).toString()
+        location = self.locationcombo.itemData(index)
         for widget in self.widgets:
             if widget.location == location:
                 return widget
@@ -253,7 +272,7 @@ class ToolsFrame(QFrame):
 
         # 2. Save the new guidefs
         for n, toollistwidget in enumerate(self.widgets):
-            toollocation = self.locationcombo.itemData(n).toString()
+            toollocation = self.locationcombo.itemData(n)
             if not toollistwidget.isDirty():
                 continue
             emitChanged = True
@@ -526,8 +545,7 @@ class ToolListBox(QListWidget):
         # Enable drag and drop to reorder the tools
         self.setDragEnabled(True)
         self.setDragDropMode(self.InternalMove)
-        if PYQT_VERSION >= 0x40700:
-            self.setDefaultDropAction(Qt.MoveAction)
+        self.setDefaultDropAction(Qt.MoveAction)
 
     def _guidef2toollist(self, guidef):
         toollist = []
@@ -682,7 +700,8 @@ class CustomConfigDialog(QDialog):
     def _readsettings(self):
         s = QSettings()
         if self.dialogname:
-            self.restoreGeometry(s.value(self.dialogname + '/geom').toByteArray())
+            self.restoreGeometry(
+                qtlib.readByteArray(s, self.dialogname + '/geom'))
         return s
 
     def _writesettings(self):

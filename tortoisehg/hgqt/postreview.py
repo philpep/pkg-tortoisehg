@@ -17,14 +17,36 @@ https://bitbucket.org/mdelagra/mercurial-reviewboard/
 More information can be found at http://www.mikeyd.com.au/tortoisehg-reviewboard
 """
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from mercurial import extensions, scmutil
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import cmdcore, qtlib
-from tortoisehg.hgqt.postreview_ui import Ui_PostReviewDialog
-from tortoisehg.hgqt.hgemail import _ChangesetsModel
+from __future__ import absolute_import
+
+from .qtcore import (
+    QSettings,
+    QThread,
+    QUrl,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QDesktopServices,
+    QDialog,
+    QKeySequence,
+    QLineEdit,
+    QShortcut,
+)
+
+from mercurial import (
+    extensions,
+    scmutil,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    qtlib,
+)
+from .hgemail import _ChangesetsModel
+from .postreview_ui import Ui_PostReviewDialog
 
 class LoadReviewDataThread(QThread):
     def __init__ (self, dialog):
@@ -153,18 +175,18 @@ class PostReviewDialog(QDialog):
     def readSettings(self):
         s = QSettings()
 
-        self.restoreGeometry(s.value('reviewboard/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'reviewboard/geom'))
 
         self.qui.publish_immediately_check.setChecked(
-                s.value('reviewboard/publish_immediately_check').toBool())
+            qtlib.readBool(s, 'reviewboard/publish_immediately_check'))
         self.qui.outgoing_changes_check.setChecked(
-                s.value('reviewboard/outgoing_changes_check').toBool())
+            qtlib.readBool(s, 'reviewboard/outgoing_changes_check'))
         self.qui.branch_check.setChecked(
-                s.value('reviewboard/branch_check').toBool())
+            qtlib.readBool(s, 'reviewboard/branch_check'))
         self.qui.update_fields.setChecked(
-                s.value('reviewboard/update_fields').toBool())
+            qtlib.readBool(s, 'reviewboard/update_fields'))
         self.qui.summary_edit.addItems(
-                s.value('reviewboard/summary_edit_history').toStringList())
+            qtlib.readStringList(s, 'reviewboard/summary_edit_history'))
 
         try:
             self.repo_id = int(self.repo.ui.config('reviewboard', 'repoid'))
@@ -172,7 +194,7 @@ class PostReviewDialog(QDialog):
             self.repo_id = None
 
         if not self.repo_id:
-            self.repo_id = s.value('reviewboard/repo_id').toInt()[0]
+            self.repo_id = qtlib.readInt(s, 'reviewboard/repo_id')
 
         self.server = self.repo.ui.config('reviewboard', 'server')
         self.user = self.repo.ui.config('reviewboard', 'user')

@@ -5,11 +5,22 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
-from tortoisehg.hgqt import qtlib
-from tortoisehg.util.i18n import _
+from .qtcore import (
+    QSettings,
+    Qt,
+)
+from .qtgui import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QLabel,
+    QVBoxLayout,
+)
+
+from ..util.i18n import _
+from . import qtlib
 
 class QDeleteDialog(QDialog):
 
@@ -40,7 +51,7 @@ class QDeleteDialog(QDialog):
     def _readSettings(self):
         qs = QSettings()
         qs.beginGroup('qdelete')
-        self._keepchk.setChecked(qs.value('keep', True).toBool())
+        self._keepchk.setChecked(qtlib.readBool(qs, 'keep', True))
         qs.endGroup()
 
     def _writeSettings(self):

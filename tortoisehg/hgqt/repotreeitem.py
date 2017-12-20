@@ -5,24 +5,43 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import os, re
+from __future__ import absolute_import
 
-from mercurial import node
-from mercurial import hg, util, error
+import os
+import re
 
-from tortoisehg.util import hglib, paths
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, hgrcutil
+from .qtcore import (
+    Qt,
+)
+from .qtgui import (
+    QApplication,
+    QMessageBox,
+    QStyle,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from mercurial import (
+    error,
+    hg,
+    node,
+    util,
+)
+
+from ..util import (
+    hglib,
+    paths,
+)
+from ..util.i18n import _
+from . import (
+    hgrcutil,
+    qtlib,
+)
 
 def _dumpChild(xw, parent):
     for c in parent.childs:
         c.dumpObject(xw)
 
 def undumpObject(xr):
-    xmltagname = str(xr.name().toString())
+    xmltagname = str(xr.name())
     obj = _xmlUndumpMap[xmltagname](xr)
     assert obj.xmltagname == xmltagname
     return obj
@@ -180,7 +199,7 @@ class RepoTreeItem(object):
         return 2
 
     def data(self, column, role):
-        return QVariant()
+        return None
 
     def setData(self, column, value):
         return False
@@ -335,10 +354,10 @@ class RepoItem(RepoTreeItem):
     @classmethod
     def undump(cls, xr):
         a = xr.attributes()
-        obj = cls(unicode(a.value('', 'root').toString()),
-                  unicode(a.value('', 'shortname').toString()),
-                  node.bin(str(a.value('', 'basenode').toString())),
-                  unicode(a.value('', 'sharedpath').toString()))
+        obj = cls(unicode(a.value('', 'root')),
+                  unicode(a.value('', 'shortname')),
+                  node.bin(str(a.value('', 'basenode'))),
+                  unicode(a.value('', 'sharedpath')))
         _undumpChild(xr, parent=obj, undump=_undumpSubrepoItem)
         return obj
 
@@ -429,7 +448,7 @@ class RepoItem(RepoTreeItem):
 
     def setData(self, column, value):
         if column == 0:
-            shortname = hglib.fromunicode(value.toString())
+            shortname = hglib.fromunicode(value)
             abshgrcpath = os.path.join(hglib.fromunicode(self.rootpath()),
                                        '.hg', 'hgrc')
             if not hgrcutil.setConfigValue(abshgrcpath, 'web.name', shortname):
@@ -437,7 +456,7 @@ class RepoItem(RepoTreeItem):
                     _('An error occurred while updating the repository hgrc '
                       'file (%s)') % hglib.tounicode(abshgrcpath))
                 return False
-            self.setShortName(value.toString())
+            self.setShortName(value)
             return True
         return False
 
@@ -524,8 +543,8 @@ class AlienSubrepoItem(RepoItem):
     @classmethod
     def undump(cls, xr):
         a = xr.attributes()
-        obj = cls(unicode(a.value('', 'root').toString()),
-                  str(a.value('', 'repotype').toString()))
+        obj = cls(unicode(a.value('', 'root')),
+                  str(a.value('', 'repotype')))
         xr.skipCurrentElement()  # no child
         return obj
 
@@ -540,7 +559,7 @@ def _newSubrepoItem(root, repotype):
 
 def _undumpSubrepoItem(xr):
     a = xr.attributes()
-    repotype = str(a.value('', 'repotype').toString()) or 'hg'
+    repotype = str(a.value('', 'repotype')) or 'hg'
     if repotype == 'hg':
         return SubrepoItem.undump(xr)
     else:
@@ -559,17 +578,17 @@ class RepoGroupItem(RepoTreeItem):
             if column == 0:
                 s = QApplication.style()
                 ico = s.standardIcon(QStyle.SP_DirIcon)
-                return QVariant(ico)
-            return QVariant()
+                return ico
+            return None
         if column == 0:
-            return QVariant(self.name)
+            return self.name
         elif column == 1:
-            return QVariant(self.getCommonPath())
-        return QVariant()
+            return self.getCommonPath()
+        return None
 
     def setData(self, column, value):
         if column == 0:
-            self.name = unicode(value.toString())
+            self.name = unicode(value)
             return True
         return False
 
@@ -598,7 +617,7 @@ class RepoGroupItem(RepoTreeItem):
     @classmethod
     def undump(cls, xr):
         a = xr.attributes()
-        obj = cls(unicode(a.value('', 'name').toString()))
+        obj = cls(unicode(a.value('', 'name')))
         _undumpChild(xr, parent=obj)
         return obj
 

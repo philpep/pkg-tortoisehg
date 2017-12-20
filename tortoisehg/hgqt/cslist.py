@@ -6,13 +6,31 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from tortoisehg.hgqt import csinfo, qtlib
-from tortoisehg.util.i18n import _
-from tortoisehg.util.patchctx import patchctx
+from .qtcore import (
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QLayout,
+    QScrollArea,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ..util.i18n import _
+from ..util.patchctx import patchctx
+from . import (
+    csinfo,
+    qtlib,
+)
 
 _SPACING = 6
 

@@ -6,14 +6,16 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
+from __future__ import absolute_import
 
 from mercurial import error
 
-from tortoisehg.util import hglib, obsoleteutil
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import csinfo, qtlib
-
-from PyQt4.QtCore import *
+from ..util import hglib, obsoleteutil
+from ..util.i18n import _
+from . import (
+    csinfo,
+    qtlib,
+)
 
 def label_func(widget, item, ctx):
     if item == 'cset':

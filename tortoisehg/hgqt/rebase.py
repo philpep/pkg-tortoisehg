@@ -5,15 +5,37 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from __future__ import absolute_import
 
 import os
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, csinfo, resolve, thgrepo, wctxcleaner
-from tortoisehg.hgqt import cmdcore, cmdui
+from .qtcore import (
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QGroupBox,
+    QLabel,
+    QMessageBox,
+    QVBoxLayout,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdcore,
+    cmdui,
+    csinfo,
+    qtlib,
+    resolve,
+    thgrepo,
+    wctxcleaner,
+)
 
 BB = QDialogButtonBox
 
@@ -136,7 +158,7 @@ class RebaseDialog(QDialog):
         qs.beginGroup('rebase')
         self.autoresolvechk.setChecked(
             self.repo.ui.configbool('tortoisehg', 'autoresolve',
-                                    qs.value('autoresolve', True).toBool()))
+                                    qtlib.readBool(qs, 'autoresolve', True)))
         qs.endGroup()
 
     def _writeSettings(self):

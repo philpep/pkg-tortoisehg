@@ -6,17 +6,53 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
-import os # for os.name
+from __future__ import absolute_import
 
-from tortoisehg.hgqt.filelistview import HgFileListView
-from tortoisehg.hgqt.fileview import HgFileView
-from tortoisehg.hgqt.revpanel import RevPanelWidget
-from tortoisehg.hgqt import filectxactions, manifestmodel, qtlib, cmdui, status
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
+import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    QEvent,
+    QPoint,
+    QSettings,
+    QSize,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QActionGroup,
+    QDialog,
+    QFrame,
+    QKeySequence,
+    QLayout,
+    QLineEdit,
+    QMenu,
+    QSizePolicy,
+    QSplitter,
+    QStyleFactory,
+    QTextBrowser,
+    QTextEdit,
+    QToolBar,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    cmdui,
+    filectxactions,
+    manifestmodel,
+    qtlib,
+    status,
+)
+from .filelistview import HgFileListView
+from .fileview import HgFileView
+from .revpanel import RevPanelWidget
 
 _fileactionsbytype = {
     'subrepo': ['openSubrepo', 'explore', 'terminal', 'copyPath', None,
@@ -76,7 +112,6 @@ class RevDetailsWidget(QWidget, qtlib.TaskWidget):
 
         basevbox = QVBoxLayout(self)
         basevbox.setSpacing(0)
-        basevbox.setMargin(0)
         basevbox.setContentsMargins(2, 2, 2, 2)
 
         self.filelistsplit = QSplitter(self)
@@ -98,7 +133,7 @@ class RevDetailsWidget(QWidget, qtlib.TaskWidget):
         self.filelistsplit.setStretchFactor(0, 3)
         vbox = QVBoxLayout()
         vbox.setSpacing(0)
-        vbox.setMargin(0)
+        vbox.setContentsMargins(0, 0, 0, 0)
         vbox.addWidget(self.filelisttbar)
         vbox.addWidget(self.filelist)
         self.filelistframe.setLayout(vbox)
@@ -109,7 +144,7 @@ class RevDetailsWidget(QWidget, qtlib.TaskWidget):
         vbox = QVBoxLayout(self.fileviewframe)
         vbox.setSpacing(0)
         vbox.setSizeConstraint(QLayout.SetDefaultConstraint)
-        vbox.setMargin(0)
+        vbox.setContentsMargins(0, 0, 0, 0)
         panelframevbox = vbox
 
         self.messagesplitter = QSplitter(self.fileviewframe)
@@ -286,7 +321,7 @@ class RevDetailsWidget(QWidget, qtlib.TaskWidget):
             self.updateItemFileActions()
             return
 
-        parentmode = self._parentToggleGroup.checkedAction().data().toInt()[0]
+        parentmode = self._parentToggleGroup.checkedAction().data()
         pnum, changedonly = [(0, True),
                              (0, False),
                              (1, False)][parentmode]
@@ -480,9 +515,9 @@ class RevDetailsWidget(QWidget, qtlib.TaskWidget):
     def loadSettings(self, s):
         wb = "RevDetailsWidget/"
         for n in self.splitternames:
-            getattr(self, n).restoreState(s.value(wb + n).toByteArray())
-        self.setFlatFileList(s.value(wb + 'flatfilelist', True).toBool())
-        expanded = s.value(wb + 'revpanel.expanded', False).toBool()
+            getattr(self, n).restoreState(qtlib.readByteArray(s, wb + n))
+        self.setFlatFileList(qtlib.readBool(s, wb + 'flatfilelist', True))
+        expanded = qtlib.readBool(s, wb + 'revpanel.expanded', False)
         self.revpanel.set_expanded(expanded)
         self.fileview.loadSettings(s, 'revpanel/fileview')
 
@@ -497,7 +532,7 @@ class RevDetailsDialog(QDialog):
         self._repoagent = repoagent
 
         layout = QVBoxLayout()
-        layout.setMargin(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
         toplayout = QVBoxLayout()
@@ -514,7 +549,7 @@ class RevDetailsDialog(QDialog):
         layout.addWidget(self.statusbar)
 
         s = QSettings()
-        self.restoreGeometry(s.value('revdetails/geom').toByteArray())
+        self.restoreGeometry(qtlib.readByteArray(s, 'revdetails/geom'))
         revdetails.loadSettings(s)
         repoagent.repositoryChanged.connect(self.refresh)
 

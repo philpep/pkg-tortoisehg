@@ -5,16 +5,50 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+from __future__ import absolute_import
+
 import os
 
-from mercurial import commands, hg, util
+from .qtcore import (
+    QFileSystemWatcher,
+    QModelIndex,
+    QPoint,
+    QSettings,
+    QTimer,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QAction,
+    QApplication,
+    QDockWidget,
+    QFileDialog,
+    QFontMetrics,
+    QFrame,
+    QMenu,
+    QMessageBox,
+    QTreeView,
+    QVBoxLayout,
+)
 
-from tortoisehg.util import hglib, paths
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib, repotreemodel, settings
+from mercurial import (
+    commands,
+    hg,
+    util,
+)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import (
+    hglib,
+    paths,
+)
+from ..util.i18n import _
+from . import (
+    qtlib,
+    repotreemodel,
+    settings,
+)
 
 def settingsfilename():
     """Return path to thg-reporegistry.xml as unicode"""
@@ -46,8 +80,7 @@ class RepoTreeView(QTreeView):
         self.setAcceptDrops(True)
         self.setAutoScroll(True)
         self.setDragDropMode(QAbstractItemView.DragDrop)
-        if PYQT_VERSION >= 0x40700:
-            self.setDefaultDropAction(Qt.MoveAction)
+        self.setDefaultDropAction(Qt.MoveAction)
         self.setDropIndicatorShown(True)
         self.setEditTriggers(QAbstractItemView.DoubleClicked
                              | QAbstractItemView.EditKeyPressed)
@@ -261,7 +294,7 @@ class RepoRegistryView(QDockWidget):
         s = QSettings()
         s.beginGroup('Workbench')  # for compatibility with old release
         for key, action in self._settingactions.iteritems():
-            action.setChecked(s.value(key, defaultmap[key]).toBool())
+            action.setChecked(qtlib.readBool(s, key, defaultmap[key]))
         s.endGroup()
 
     def _saveSettings(self):
@@ -304,7 +337,7 @@ class RepoRegistryView(QDockWidget):
 
     def settingActions(self):
         return sorted(self._settingactions.itervalues(),
-                      key=lambda a: a.data().toInt())
+                      key=lambda a: a.data())
 
     def _isSettingEnabled(self, key):
         return self._settingactions[key].isChecked()
@@ -355,7 +388,7 @@ class RepoRegistryView(QDockWidget):
 
     def _readExpandedState(self, s):
         model = self.tview.model()
-        for path in s.value('expanded').toStringList():
+        for path in qtlib.readStringList(s, 'expanded'):
             self.tview.expand(model.indexFromItemPath(path))
 
     def _writeExpandedState(self, s):

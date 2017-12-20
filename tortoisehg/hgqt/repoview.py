@@ -15,16 +15,59 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import absolute_import
+
 from math import sin, cos, pi
+
+from .qtcore import (
+    QItemSelectionModel,
+    QPoint,
+    QPointF,
+    QRectF,
+    QSettings,
+    QSize,
+    QT_VERSION,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractItemView,
+    QAction,
+    QApplication,
+    QBrush,
+    QClipboard,
+    QColor,
+    QDialog,
+    QDialogButtonBox,
+    QFont,
+    QFontMetrics,
+    QLabel,
+    QListView,
+    QListWidget,
+    QListWidgetItem,
+    QMenu,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPolygonF,
+    QStyle,
+    QStyleOptionViewItemV2,
+    QStyleOptionViewItemV4,
+    QStyledItemDelegate,
+    QTreeView,
+    QVBoxLayout,
+)
 
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import graph, qtlib, repomodel
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    graph,
+    qtlib,
+    repomodel,
+)
 
 class HgRepoView(QTreeView):
 
@@ -43,8 +86,12 @@ class HgRepoView(QTreeView):
         self.colselect = colselect
 
         header = self.header()
-        header.setClickable(False)
-        header.setMovable(True)
+        if QT_VERSION < 0x50000:
+            header.setClickable(False)
+            header.setMovable(True)
+        else:
+            header.setSectionsClickable(False)
+            header.setSectionsMovable(True)
         header.setDefaultAlignment(Qt.AlignLeft)
         header.setHighlightSections(False)
         header.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -61,8 +108,7 @@ class HgRepoView(QTreeView):
                                       LabeledDelegate(self, margin=0))
 
         self.setAcceptDrops(True)
-        if PYQT_VERSION >= 0x40700:
-            self.setDefaultDropAction(Qt.MoveAction)
+        self.setDefaultDropAction(Qt.MoveAction)
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
         self.setDragDropMode(QAbstractItemView.InternalMove)
@@ -122,7 +168,7 @@ class HgRepoView(QTreeView):
         model = self.model()
         s = QSettings()
         s.beginGroup(self.colselect[0])
-        cols = s.value('columns').toStringList()
+        cols = qtlib.readStringList(s, 'columns')
         cols = [str(col) for col in cols]
         # Fixup older names for columns
         if 'Log' in cols:
@@ -132,7 +178,7 @@ class HgRepoView(QTreeView):
             cols[cols.index('ID')] = 'Rev'
             s.setValue('columns', cols)
         s.endGroup()
-        allcolumns = repomodel.ALLCOLUMNS[:model.columnCount()]
+        allcolumns = model.allColumns()
         validcols = [col for col in cols if col in allcolumns]
         if not validcols:
             validcols = model._defaultcolumns
@@ -147,7 +193,7 @@ class HgRepoView(QTreeView):
 
     def visibleColumns(self):
         hh = self.header()
-        return [repomodel.ALLCOLUMNS[hh.logicalIndex(visualindex)]
+        return [self.model().allColumns()[hh.logicalIndex(visualindex)]
                 for visualindex in xrange(hh.count() - hh.hiddenSectionCount())]
 
     def setVisibleColumns(self, visiblecols):
@@ -155,7 +201,7 @@ class HgRepoView(QTreeView):
             return
         hh = self.header()
         hh.sectionMoved.disconnect(self.columnsVisibilityChanged)
-        allcolumns = repomodel.ALLCOLUMNS[:self.model().columnCount()]
+        allcolumns = self.model().allColumns()
         for logicalindex, colname in enumerate(allcolumns):
             hh.setSectionHidden(logicalindex, colname not in visiblecols)
         for newvisualindex, colname in enumerate(visiblecols):
@@ -171,9 +217,9 @@ class HgRepoView(QTreeView):
             # logical columns are vary by model class
             self._loadColumnSettings()
         #Check if the font contains the glyph needed by the model
-        if not QFontMetrics(self.font()).inFont(QString(u'\u2605').at(0)):
+        if not QFontMetrics(self.font()).inFont(u'\u2605'):
             model.unicodestar = False
-        if not QFontMetrics(self.font()).inFont(QString(u'\u2327').at(0)):
+        if not QFontMetrics(self.font()).inFont(u'\u2327'):
             model.unicodexinabox = False
         self.selectionModel().currentRowChanged.connect(self.onRowChange)
         self._rev_history = []
@@ -195,7 +241,7 @@ class HgRepoView(QTreeView):
             key = '%s/column_widths/%s' % (self.cfgname,
                                            hglib.shortrepoid(self.repo))
             try:
-                col_widths = [int(w) for w in qs.value(key).toStringList()]
+                col_widths = [int(w) for w in qtlib.readStringList(qs, key)]
             except ValueError:
                 pass
 
@@ -243,7 +289,8 @@ class HgRepoView(QTreeView):
         rev = self.revFromindex(index)
         if rev is not None:
             clip = QApplication.clipboard()
-            clip.setText(str(self.repo[rev]), QClipboard.Selection)
+            if clip.supportsSelection():
+                clip.setText(str(self.repo[rev]), QClipboard.Selection)
 
     def revActivated(self, index):
         rev = self.revFromindex(index)
@@ -305,7 +352,7 @@ class HgRepoView(QTreeView):
         """
         Select revision 'rev' (can be anything understood by repo.changectx())
         """
-        if isinstance(rev, (unicode, QString)):
+        if isinstance(rev, unicode):
             rev = hglib.fromunicode(rev)
         try:
             rev = self.repo.changectx(rev).rev()
@@ -461,7 +508,7 @@ class GraphDelegate(QStyledItemDelegate):
         # update to the actual height that should be the same for all rows
         self._rowheight = option.rect.height()
         visibleend = self._colcount(option.rect.width())
-        gnode = index.data(repomodel.GraphNodeRole).toPyObject()
+        gnode = index.data(repomodel.GraphNodeRole)
         painter.save()
         try:
             painter.setClipRect(option.rect)
@@ -525,7 +572,13 @@ class GraphDelegate(QStyledItemDelegate):
             dot_color = QColor("gray")
             radius = self._dotradius() * 0.8
         else:
-            dot_color = QBrush(index.data(Qt.ForegroundRole)).color()
+            fg = index.data(Qt.ForegroundRole)
+            if not fg:
+                # work around integrity error in HgRepoListModel, which may
+                # provide a valid index for stripped revision and data()
+                # returns None due to RepoLookupError. (#4451)
+                return
+            dot_color = QBrush(fg).color()
             radius = self._dotradius()
         dotcolor = dot_color.lighter()
         pencolor = dot_color.darker()
@@ -613,7 +666,7 @@ class GraphDelegate(QStyledItemDelegate):
 
     def sizeHint(self, option, index):
         size = super(GraphDelegate, self).sizeHint(option, index)
-        gnode = index.data(repomodel.GraphNodeRole).toPyObject()
+        gnode = index.data(repomodel.GraphNodeRole)
         if gnode:
             # return width for current height assuming that row height
             # is calculated first (mimic width-for-height policy)
@@ -686,7 +739,7 @@ class LabeledDelegate(QStyledItemDelegate):
 
     def initStyleOption(self, option, index):
         super(LabeledDelegate, self).initStyleOption(option, index)
-        labels = index.data(repomodel.LabelsRole).toPyObject()
+        labels = index.data(repomodel.LabelsRole)
         if not labels:
             return
         lay = self._makeLabelsLayout(labels, option)
@@ -696,7 +749,7 @@ class LabeledDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         super(LabeledDelegate, self).paint(painter, option, index)
-        labels = index.data(repomodel.LabelsRole).toPyObject()
+        labels = index.data(repomodel.LabelsRole)
         if not labels:
             return
 
@@ -731,8 +784,8 @@ class LabeledDelegate(QStyledItemDelegate):
 class ColumnSelectDialog(QDialog):
     def __init__(self, name, model, curcolumns, parent=None):
         QDialog.__init__(self, parent)
-        all = repomodel.ALLCOLUMNS[:model.columnCount()]
-        colnames = dict(repomodel.COLUMNHEADERS)
+        all = model.allColumns()
+        colnames = dict(model.allColumnHeaders())
 
         self.setWindowTitle(name)
         self.setWindowFlags(self.windowFlags() & \

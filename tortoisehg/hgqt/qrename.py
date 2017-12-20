@@ -6,14 +6,25 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
 import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qtcore import (
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QDialog,
+    QDialogButtonBox,
+    QLabel,
+    QRadioButton,
+    QVBoxLayout,
+)
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import qtlib
 
 def checkPatchname(patchfile, parent):
     if os.path.exists(patchfile):

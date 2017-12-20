@@ -6,15 +6,39 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-from tortoisehg.hgqt import qtlib
-from tortoisehg.util.i18n import _
-from tortoisehg.util import menuthg
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from _winreg import (
+    CreateKey,
+    HKEY_CURRENT_USER,
+    OpenKey,
+    QueryValueEx,
+    REG_DWORD,
+    REG_SZ,
+    SetValueEx,
+)
 
-from _winreg import (HKEY_CURRENT_USER, REG_SZ, REG_DWORD,
-                     OpenKey, CreateKey, QueryValueEx, SetValueEx)
+from .qtgui import (
+    QApplication,
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QStyle,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ..util import menuthg
+from ..util.i18n import _
+from . import qtlib
 
 THGKEY = 'TortoiseHg'
 OVLKEY = 'TortoiseOverlays'

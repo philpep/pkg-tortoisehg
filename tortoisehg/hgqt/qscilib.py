@@ -6,15 +6,47 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import re, os, weakref
+from __future__ import absolute_import
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib
+import os
+import re
+import weakref
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qsci import *
+from .qsci import (
+    QSCINTILLA_VERSION,
+    QsciLexerProperties,
+    QsciScintilla,
+)
+from .qtcore import (
+    QObject,
+    QEvent,
+    QFile,
+    QIODevice,
+    QRect,
+    QSettings,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAction,
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QInputMethodEvent,
+    QKeyEvent,
+    QKeySequence,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QToolBar,
+    QVBoxLayout,
+    qApp,
+)
+
+from ..util import hglib
+from ..util.i18n import _
+from . import qtlib
 
 # indicator for highlighting preedit text of input method
 _IM_PREEDIT_INDIC_ID = QsciScintilla.INDIC_MAX
@@ -353,13 +385,17 @@ class Scintilla(ScintillaCompat):
         qs.setValue(prefix+'/autocomplete', self.autoCompletionThreshold())
 
     def loadSettings(self, qs, prefix):
-        self.setWrapMode(qs.value(prefix+'/wrap').toInt()[0])
-        self.setWhitespaceVisibility(qs.value(prefix+'/whitespace').toInt()[0])
-        self.setEolVisibility(qs.value(prefix+'/eol').toBool())
-        self.setIndentationsUseTabs(qs.value(prefix+'/usetabs').toInt()[0])
+        self.setWrapMode(qtlib.readInt(qs, prefix + '/wrap'))
+        self.setWhitespaceVisibility(qtlib.readInt(qs, prefix + '/whitespace'))
+        self.setEolVisibility(qtlib.readBool(qs, prefix + '/eol'))
+        # usetabs = -1, False, or True
+        usetabs = qtlib.readInt(qs, prefix + '/usetabs')
+        if usetabs != -1:
+            usetabs = qtlib.readBool(qs, prefix + '/usetabs')
+        self.setIndentationsUseTabs(usetabs)
         self.setDefaultEolMode()
         self.setAutoCompletionThreshold(
-            qs.value(prefix+'/autocomplete', -1).toInt()[0])
+            qtlib.readInt(qs, prefix + '/autocomplete', -1))
 
 
     @pyqtSlot(str, bool, bool, bool)
@@ -444,27 +480,27 @@ class Scintilla(ScintillaCompat):
 
     @pyqtSlot(QAction)
     def _setWrapModeByMenu(self, action):
-        mode, _ok = action.data().toInt()
+        mode = action.data()
         self.setWrapMode(mode)
 
     @pyqtSlot(QAction)
     def _setWhitespaceVisibilityByMenu(self, action):
-        mode, _ok = action.data().toInt()
+        mode = action.data()
         self.setWhitespaceVisibility(mode)
 
     @pyqtSlot(QAction)
     def _setEolVisibilityByMenu(self, action):
-        visible = action.data().toBool()
+        visible = action.data()
         self.setEolVisibility(visible)
 
     @pyqtSlot(QAction)
     def _setEolModeByMenu(self, action):
-        mode, _ok = action.data().toInt()
+        mode = action.data()
         self.setEolMode(mode)
 
     @pyqtSlot(QAction)
     def _setIndentationsUseTabsByMenu(self, action):
-        mode, _ok = action.data().toInt()
+        mode = action.data()
         self.setIndentationsUseTabs(mode)
 
     def setIndentationsUseTabs(self, tabs):
@@ -570,8 +606,8 @@ class SearchToolBar(QToolBar):
             self._le.selectAll()
 
     def _readsettings(self):
-        self.setCaseInsensitive(self._settings.value('icase', False).toBool())
-        self.setWrapAround(self._settings.value('wrap', False).toBool())
+        self.setCaseInsensitive(qtlib.readBool(self._settings, 'icase', False))
+        self.setWrapAround(qtlib.readBool(self._settings, 'wrap', False))
 
     @pyqtSlot()
     def _writesettings(self):
@@ -583,7 +619,7 @@ class SearchToolBar(QToolBar):
         self.conditionChanged.emit(self.pattern(), self.caseInsensitive(),
                                    self.wrapAround())
 
-    @qtlib.senderSafeSlot()
+    @pyqtSlot()
     def _emitSearchRequested(self):
         forward = self.sender() is not self._prevact
         self.searchRequested.emit(self.pattern(), self.caseInsensitive(),
@@ -663,7 +699,7 @@ class KeyPressInterceptor(QObject):
 def unbindConflictedKeys(sci):
     cmdset = sci.standardCommands()
     try:
-        cmd = cmdset.boundTo(QKeySequence('CTRL+L'))
+        cmd = cmdset.boundTo(Qt.CTRL + Qt.Key_L)
         if cmd:
             cmd.setKey(0)
     except AttributeError:  # old QScintilla does not have boundTo()
@@ -808,7 +844,7 @@ def fileEditor(filename, **opts):
     geomname = 'editor-geom'
     desktopgeom = qApp.desktop().availableGeometry()
     dialog.resize(desktopgeom.size() * 0.5)
-    dialog.restoreGeometry(s.value(geomname).toByteArray())
+    dialog.restoreGeometry(qtlib.readByteArray(s, geomname))
 
     if not readFile(editor, filename):
         return QDialog.Rejected

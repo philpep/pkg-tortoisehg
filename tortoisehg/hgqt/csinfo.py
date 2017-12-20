@@ -5,17 +5,27 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-import re
-import binascii
+from __future__ import absolute_import
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import binascii
+import re
+
+from .qtcore import (
+    QSize,
+    Qt,
+    pyqtSignal,
+)
+from .qtgui import (
+    QHBoxLayout,
+    QLabel,
+    QWidget,
+)
 
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import qtlib
+from ..util import hglib
+from ..util.i18n import _
+from . import qtlib
 
 PANEL_DEFAULT = ('rev', 'summary', 'user', 'dateage', 'branch', 'close',
                  'tags', 'graft', 'transplant', 'obsolete',
@@ -404,7 +414,7 @@ class SummaryPanel(SummaryBase, QWidget):
         self.csstyle = style
 
         hbox = QHBoxLayout()
-        hbox.setMargin(0)
+        hbox.setContentsMargins(0, 0, 0, 0)
         hbox.setSpacing(0)
         self.setLayout(hbox)
         self.revlabel = None
@@ -425,7 +435,7 @@ class SummaryPanel(SummaryBase, QWidget):
             if self.expand_btn.parentWidget() is None:
                 self.expand_btn.clicked.connect(lambda: self.update())
                 margin = QHBoxLayout()
-                margin.setMargin(3)
+                margin.setContentsMargins(3, 3, 3, 3)
                 margin.addWidget(self.expand_btn, 0, Qt.AlignTop)
                 self.layout().insertLayout(0, margin)
             self.expand_btn.setVisible(True)

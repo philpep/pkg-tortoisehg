@@ -5,14 +5,35 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+from __future__ import absolute_import
+
+from .qtcore import (
+    QSettings,
+    Qt,
+    pyqtSlot,
+)
+from .qtgui import (
+    QAbstractButton,
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QGridLayout,
+    QLabel,
+    QLayout,
+    QSizePolicy,
+    QVBoxLayout,
+)
+
 from mercurial import error
 
-from tortoisehg.util import hglib
-from tortoisehg.util.i18n import _
-from tortoisehg.hgqt import csinfo, qtlib
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..util import hglib
+from ..util.i18n import _
+from . import (
+    csinfo,
+    qtlib,
+)
 
 class MatchDialog(QDialog):
 
@@ -116,18 +137,20 @@ class MatchDialog(QDialog):
         s = QSettings()
 
         #### Persisted Options
-        self.summary_chk.setChecked(s.value('matching/summary', False).toBool())
+        self.summary_chk.setChecked(
+            qtlib.readBool(s, 'matching/summary', False))
         self.description_chk.setChecked(
-            s.value('matching/description', True).toBool())
-        self.author_chk.setChecked(s.value('matching/author', True).toBool())
-        self.branch_chk.setChecked(s.value('matching/branch', False).toBool())
-        self.date_chk.setChecked(s.value('matching/date', True).toBool())
-        self.files_chk.setChecked(s.value('matching/files', False).toBool())
-        self.diff_chk.setChecked(s.value('matching/diff', False).toBool())
-        self.parents_chk.setChecked(s.value('matching/parents', False).toBool())
-        self.phase_chk.setChecked(s.value('matching/phase', False).toBool())
+            qtlib.readBool(s, 'matching/description', True))
+        self.author_chk.setChecked(qtlib.readBool(s, 'matching/author', True))
+        self.branch_chk.setChecked(qtlib.readBool(s, 'matching/branch', False))
+        self.date_chk.setChecked(qtlib.readBool(s, 'matching/date', True))
+        self.files_chk.setChecked(qtlib.readBool(s, 'matching/files', False))
+        self.diff_chk.setChecked(qtlib.readBool(s, 'matching/diff', False))
+        self.parents_chk.setChecked(
+            qtlib.readBool(s, 'matching/parents', False))
+        self.phase_chk.setChecked(qtlib.readBool(s, 'matching/phase', False))
         self.substate_chk.setChecked(
-            s.value('matching/substate', False).toBool())
+            qtlib.readBool(s, 'matching/substate', False))
 
         ## bottom buttons
         buttons = QDialogButtonBox()
